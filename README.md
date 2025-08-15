@@ -2,6 +2,102 @@
 
 A comprehensive collection of AI prompts specifically designed for academic research, writing, and analysis across multiple disciplines. This repository provides structured, high-quality prompts to enhance productivity in academic workflows.
 
+## 🎭 Choose Your Path
+
+<table>
+<tr>
+<td width="25%">
+
+### 🆕 **New User**
+**Just getting started?**
+
+➤ [Overview](#-overview)  
+➤ [Getting Started](#-getting-started)  
+➤ [Try a Search](#2-search-existing-prompts)  
+➤ [Add First Prompt](#1-add-new-prompts)
+
+</td>
+<td width="25%">
+
+### 🔍 **Prompt Hunter**
+**Looking for existing prompts?**
+
+➤ [Search Tool](#2-search-existing-prompts)  
+➤ [Browse Categories](#-categories-overview)  
+➤ [Quick Search](#most-common-tasks-click-to-expand)  
+➤ [Other Languages](#-comprehensive-multilingual-support)
+
+</td>
+<td width="25%">
+
+### ✍️ **Content Creator**
+**Want to add prompts?**
+
+➤ [Add Tool](#1-add-new-prompts)  
+➤ [Prompt Format](#-prompt-format)  
+➤ [Formatting Guide](#-prompt-formatting-guidelines)  
+➤ [Contributing](#-contributing)
+
+</td>
+<td width="25%">
+
+### 🛠️ **Power User**  
+**Need advanced features?**
+
+➤ [All Tools](#-tools-reference)  
+➤ [CLI Reference](#-tools-reference)  
+➤ [Translation Tools](#4-translation-tools)  
+➤ [Category Management](#3-manage-categories)
+
+</td>
+</tr>
+</table>
+
+## 📋 Table of Contents
+
+### 🚀 Quick Start
+- [Overview](#-overview) 
+- [Quick Start](#-quick-start)
+- [Getting Started](#-getting-started)
+
+### 🛠️ Tools & Usage
+- [CLI Tools](#using-the-cli-tools)
+  - [Add Prompts](#1-add-new-prompts) | [Search](#2-search-existing-prompts) | [Manage Categories](#3-manage-categories) | [Translations](#4-translation-tools)
+- [Tools Reference](#-tools-reference)
+- [Usage Examples](#usage-examples)
+
+### 📚 Documentation & Help
+- [📋 Most Common Tasks](#most-common-tasks-click-to-expand) - Quick command reference
+- [🛠️ Features Overview](#-features) - Tool capabilities summary
+- [📁 Repository Structure](#-repository-structure) - Project organization
+- [📝 Prompt Format](#-prompt-format) - Basic format guide
+- [📖 Detailed Tool Docs](#-detailed-tool-documentation) - Complete tool reference
+- [📋 Formatting Guidelines](#-prompt-formatting-guidelines) - Comprehensive style guide
+- [❓ Support & Help](#-support) - Get assistance
+
+### 🌍 Languages & Categories
+- [Multilingual Support](#-comprehensive-multilingual-support)
+- [Categories Overview](#-categories-overview)
+
+### 🤝 Project Info
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Support](#-support)
+
+---
+
+## ⚡ Quick Navigation
+
+**New User?** → [Overview](#-overview) → [Getting Started](#-getting-started) → [Add Your First Prompt](#1-add-new-prompts)
+
+**Need Help?** → [Tools Reference](#-tools-reference) → [Usage Examples](#usage-examples) → [Support](#-support)
+
+**Looking for Prompts?** → [Search Tool](#2-search-existing-prompts) → [Categories](#-categories-overview) → [Browse by Language](#-comprehensive-multilingual-support)
+
+**Want to Contribute?** → [Prompt Format](#-prompt-format) → [Adding Prompts](#1-add-new-prompts) → [Contributing Guide](#-contributing)
+
+---
+
 ## 🎯 Overview
 
 This collection includes prompts for academic research across 12 major academic languages:
@@ -30,6 +126,32 @@ This collection includes prompts for academic research across 12 major academic 
 - **General Academic**: Interdisciplinary, Academic Writing, Research Methods
 
 ## 🚀 Quick Start
+
+<details>
+<summary><strong>📋 Most Common Tasks (Click to expand)</strong></summary>
+
+### 🔍 Find a Prompt
+```bash
+./scripts/search_prompts.sh machine learning
+./scripts/search_prompts.sh -i  # interactive mode
+```
+
+### ➕ Add a New Prompt  
+```bash
+./scripts/add_prompt.sh
+# Follow the interactive prompts
+```
+
+### 📂 Browse Categories
+```bash
+./scripts/search_prompts.sh -l  # list all categories
+./scripts/manage_categories.sh -l  # list areas/categories
+```
+
+### 🌍 Use Different Languages
+Navigate to: `Prompts/[LANGUAGE]/` (e.g., `Prompts/ZH/`, `Prompts/JP/`)
+
+</details>
 
 ### Using the CLI Tools
 
@@ -67,6 +189,15 @@ Tool for managing multilingual translations and verifying consistency across all
 ## 📚 Documentation
 
 All documentation is included in this README file for easy access and maintenance.
+
+<details>
+<summary><strong>📖 Detailed Documentation Sections</strong></summary>
+
+- [Detailed Tool Documentation](#-detailed-tool-documentation)
+- [Prompt Formatting Guidelines](#-prompt-formatting-guidelines)  
+- [Comprehensive Multilingual Support](#-comprehensive-multilingual-support)
+
+</details>
 
 ## 🛠️ Features
 
@@ -282,6 +413,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📖 Detailed Tool Documentation
 
+<details>
+<summary><strong>🔧 Add Prompt CLI Tool (add_prompt.sh)</strong></summary>
+
 ### Add Prompt CLI Tool (`add_prompt.sh`)
 
 Interactive command-line tool for adding academic prompts following standardized formatting guidelines.
@@ -336,6 +470,11 @@ Select (1-8): 2
 💾 Add this prompt? (Y/n): y
 ✅ Prompt successfully added!
 ```
+
+</details>
+
+<details>
+<summary><strong>📂 Category Management Tool (manage_categories.sh)</strong></summary>
 
 ### Category Management Tool (`manage_categories.sh`)
 
@@ -414,6 +553,11 @@ The tool works with markdown files in the `Prompts/EN/` directory that have this
 - **Safety**: Prevents accidental duplication or formatting issues
 - **Visibility**: Shows what already exists before adding new items
 
+</details>
+
+<details>
+<summary><strong>🔍 Search Tool (search_prompts.sh)</strong></summary>
+
 ### Search Tool (`search_prompts.sh`)
 
 A CLI tool for searching academic prompts across markdown files with advanced filtering capabilities.
@@ -450,7 +594,12 @@ A CLI tool for searching academic prompts across markdown files with advanced fi
 - `--case-sensitive`: Case-sensitive search
 - `--exact-match`: Exact phrase matching
 
+</details>
+
 ## 📋 Prompt Formatting Guidelines
+
+<details>
+<summary><strong>📝 Complete Formatting Guide (Click to expand)</strong></summary>
 
 This section outlines the standard format for adding prompts to the academic prompt collection.
 
@@ -544,6 +693,8 @@ Available resources: [RESOURCES]
 - Each category has its own markdown file in `/Prompts/EN/`
 - Prompts are numbered sequentially within each file
 - Use the Research Areas and Prompt Categories defined in each file for consistent tagging
+
+</details>
 
 ## 🌍 Comprehensive Multilingual Support
 

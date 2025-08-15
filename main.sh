@@ -19,11 +19,20 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROFILE_FILE="$SCRIPT_DIR/Profiles/user_profile.conf"
 
+# Load language strings
+source "$SCRIPT_DIR/Profiles/language_strings.sh" 2>/dev/null || true
+
 # Function to print colored output
 print_color() {
     local color=$1
     local message=$2
-    echo -e "${color}${message}${NC}"
+    local show_colors=$(read_profile_value "SHOW_COLORS" "true")
+    
+    if [[ "$show_colors" == "true" ]]; then
+        echo -e "${color}${message}${NC}"
+    else
+        echo "$message"
+    fi
 }
 
 # Function to read profile value
@@ -32,7 +41,7 @@ read_profile_value() {
     local default_value="$2"
     
     if [[ -f "$PROFILE_FILE" ]]; then
-        local value=$(grep "^$key=" "$PROFILE_FILE" | cut -d'=' -f2 | tr -d ' ')
+        local value=$(grep "^$key=" "$PROFILE_FILE" | cut -d'=' -f2 | cut -d'#' -f1 | tr -d ' ')
         if [[ -n "$value" ]]; then
             echo "$value"
         else
@@ -46,12 +55,17 @@ read_profile_value() {
 # Function to print header
 print_header() {
     clear
+    local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+    local title=$(get_string "MAIN_TITLE" "$interface_lang")
+    local subtitle=$(get_string "MAIN_SUBTITLE" "$interface_lang")
+    local subtitle2=$(get_string "MAIN_SUBTITLE2" "$interface_lang")
+    
     print_color "$BOLD$BLUE" "╔══════════════════════════════════════════════════════════════╗"
     print_color "$BOLD$BLUE" "║                                                              ║"
-    print_color "$BOLD$BLUE" "║           🎓 AWESOME ACADEMIC PROMPTS TOOLKIT 🎓            ║"
+    print_color "$BOLD$BLUE" "║           $title            ║"
     print_color "$BOLD$BLUE" "║                                                              ║"
-    print_color "$BOLD$BLUE" "║        Your Complete Academic AI Prompt Management          ║"
-    print_color "$BOLD$BLUE" "║                     Command Center                           ║"
+    print_color "$BOLD$BLUE" "║        $subtitle          ║"
+    print_color "$BOLD$BLUE" "║                     $subtitle2                           ║"
     print_color "$BOLD$BLUE" "║                                                              ║"
     print_color "$BOLD$BLUE" "╚══════════════════════════════════════════════════════════════╝"
     echo ""
@@ -59,31 +73,32 @@ print_header() {
 
 # Function to show main menu
 show_main_menu() {
-    print_color "$CYAN" "📋 Available Tools:"
+    local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+    
+    print_color "$CYAN" "$(get_string "AVAILABLE_TOOLS" "$interface_lang")"
     echo ""
-    print_color "$GREEN" "  1. 📝 Add New Prompt"
-    print_color "$YELLOW" "     └─ Interactive tool to add academic prompts with validation"
+    print_color "$GREEN" "  1. $(get_string "ADD_PROMPT" "$interface_lang")"
+    print_color "$YELLOW" "     └─ $(get_string "ADD_PROMPT_DESC" "$interface_lang")"
     echo ""
-    print_color "$GREEN" "  2. 🔍 Search Prompts"
-    print_color "$YELLOW" "     └─ Find prompts by keywords, categories, or tags"
+    print_color "$GREEN" "  2. $(get_string "SEARCH_PROMPTS" "$interface_lang")"
+    print_color "$YELLOW" "     └─ $(get_string "SEARCH_PROMPTS_DESC" "$interface_lang")"
     echo ""
-    print_color "$GREEN" "  3. 🏷️  Manage Categories"
-    print_color "$YELLOW" "     └─ Add/manage Research Areas and Prompt Categories"
+    print_color "$GREEN" "  3. $(get_string "MANAGE_CATEGORIES" "$interface_lang")"
+    print_color "$YELLOW" "     └─ $(get_string "MANAGE_CATEGORIES_DESC" "$interface_lang")"
     echo ""
-    print_color "$GREEN" "  4. 📊 Repository Statistics"
-    print_color "$YELLOW" "     └─ View collection statistics and overview"
+    print_color "$GREEN" "  4. $(get_string "REPO_STATS" "$interface_lang")"
+    print_color "$YELLOW" "     └─ $(get_string "REPO_STATS_DESC" "$interface_lang")"
     echo ""
-    print_color "$GREEN" "  5. 🌍 Translation Tools"
-    print_color "$YELLOW" "     └─ Manage multilingual translations and consistency"
+    print_color "$GREEN" "  5. $(get_string "TRANSLATION_TOOLS" "$interface_lang")"
+    print_color "$YELLOW" "     └─ $(get_string "TRANSLATION_TOOLS_DESC" "$interface_lang")"
     echo ""
-    print_color "$GREEN" "  6. 📚 Documentation"
-    print_color "$YELLOW" "     └─ Access help and documentation"
+    print_color "$GREEN" "  6. $(get_string "DOCUMENTATION" "$interface_lang")"
+    print_color "$YELLOW" "     └─ $(get_string "DOCUMENTATION_DESC" "$interface_lang")"
     echo ""
-    print_color "$GREEN" "  7. ⚙️  Settings"
-    print_color "$YELLOW" "     └─ Manage user preferences and configuration"
+    print_color "$GREEN" "  7. $(get_string "SETTINGS" "$interface_lang")"
+    print_color "$YELLOW" "     └─ $(get_string "SETTINGS_DESC" "$interface_lang")"
     echo ""
-    print_color "$GREEN" "  8. 🚪 Exit"
-    print_color "$YELLOW" "  q. 🚪 Quick Exit (or just press Enter)"
+    print_color "$GREEN" "  8. $(get_string "EXIT" "$interface_lang")"
     echo ""
     print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
@@ -98,7 +113,8 @@ show_statistics() {
     set +euo pipefail
     
     print_header
-    print_color "$BOLD$CYAN" "📊 Repository Statistics"
+    local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+    print_color "$BOLD$CYAN" "$(get_string "STATS_MENU_TITLE" "$interface_lang")"
     echo ""
     
     local prompts_dir="$SCRIPT_DIR/Prompts/EN"
@@ -181,9 +197,9 @@ show_statistics() {
     # Add return to main menu option
     print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
-    print_color "$GREEN" "  1. 🔙 Return to Main Menu"
-    print_color "$GREEN" "  2. 📊 View Statistics Again"
-    print_color "$YELLOW" "  q. 🔙 Quick Return (or just press Enter)"
+    local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+    print_color "$GREEN" "  1. $(get_string "RETURN_TO_MAIN" "$interface_lang")"
+    print_color "$GREEN" "  2. $(get_string "VIEW_STATS_AGAIN" "$interface_lang")"
     echo ""
     
     while true; do
@@ -210,25 +226,50 @@ show_statistics() {
 show_documentation_menu() {
     while true; do
         print_header
-        print_color "$BOLD$CYAN" "📚 Documentation & Help"
+        local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+        
+        print_color "$BOLD$CYAN" "$(get_string "DOC_MENU_TITLE" "$interface_lang")"
         echo ""
-        print_color "$GREEN" "  1. 📖 View README.md"
-        print_color "$GREEN" "  2. 📝 Add Prompt Tool Guide (CLI_README.md)"
-        print_color "$GREEN" "  3. 🏷️  Category Management Guide (MANAGE_CATEGORIES_README.md)"
-        print_color "$GREEN" "  4. 📋 Prompt Format Guidelines (PROMPT_FORMAT.md)"
-        print_color "$GREEN" "  5. 🔍 Search Tool Guide (SEARCH_README.md)"
-        print_color "$GREEN" "  6. 🔧 Tool Help Commands"
-        print_color "$GREEN" "  7. 🔙 Back to Main Menu"
-        print_color "$YELLOW" "  q. 🔙 Quick Return (or just press Enter)"
+        print_color "$GREEN" "  1. $(get_string "QUICK_START_COMMON" "$interface_lang")"
+        print_color "$YELLOW" "     └─ Most frequently used commands and workflows"
+        echo ""
+        print_color "$GREEN" "  2. $(get_string "TOOLS_OVERVIEW" "$interface_lang")"
+        print_color "$YELLOW" "     └─ Complete tool capabilities and features summary"
+        echo ""
+        print_color "$GREEN" "  3. $(get_string "REPO_STRUCTURE" "$interface_lang")"
+        print_color "$YELLOW" "     └─ Project organization and prompt formatting guide"
+        echo ""
+        print_color "$GREEN" "  4. $(get_string "COMPLETE_DOCS" "$interface_lang")"
+        print_color "$YELLOW" "     └─ Full comprehensive documentation"
+        echo ""
+        print_color "$GREEN" "  5. $(get_string "COMMAND_HELP" "$interface_lang")"
+        print_color "$YELLOW" "     └─ Tool help commands and usage examples"
+        echo ""
+        print_color "$GREEN" "  6. $(get_string "LANGUAGES_CATEGORIES" "$interface_lang")"
+        print_color "$YELLOW" "     └─ Multilingual support and category overview"
+        echo ""
+        print_color "$GREEN" "  7. $(get_string "SMART_NAVIGATION" "$interface_lang")"
+        print_color "$YELLOW" "     └─ Role-based documentation paths"
+        echo ""
+        print_color "$GREEN" "  8. $(get_string "BACK_TO_MENU" "$interface_lang")"
         echo ""
         print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo ""
         
-        echo -n "Select option (1-7) or type 'q' to return: "
+        echo -n "$(get_string "SELECT_OPTION" "$interface_lang") (1-8) or type 'q' to return: "
         read -r choice </dev/tty
         
         case $choice in
             1)
+                show_quick_start_guide
+                ;;
+            2)
+                show_tools_overview
+                ;;
+            3)
+                show_structure_and_format
+                ;;
+            4)
                 if [[ -f "$SCRIPT_DIR/README.md" ]]; then
                     less "$SCRIPT_DIR/README.md"
                     print_color "$BLUE" "Press Enter or type 'q' to return to documentation menu..."
@@ -245,132 +286,276 @@ show_documentation_menu() {
                     fi
                 fi
                 ;;
-            2)
-                if [[ -f "$SCRIPT_DIR/CLI_README.md" ]]; then
-                    less "$SCRIPT_DIR/CLI_README.md"
-                    print_color "$BLUE" "Press Enter or type 'q' to return to documentation menu..."
-                    read -r input </dev/tty
-                    if [[ "$input" == "q" ]] || [[ "$input" == "Q" ]]; then
-                        break
-                    fi
-                else
-                    print_color "$RED" "CLI_README.md not found! (Documentation is now integrated in README.md)"
-                    print_color "$BLUE" "Press Enter or type 'q' to return to documentation menu..."
-                    read -r input </dev/tty
-                    if [[ "$input" == "q" ]] || [[ "$input" == "Q" ]]; then
-                        break
-                    fi
-                fi
-                ;;
-            3)
-                if [[ -f "$SCRIPT_DIR/MANAGE_CATEGORIES_README.md" ]]; then
-                    less "$SCRIPT_DIR/MANAGE_CATEGORIES_README.md"
-                    print_color "$BLUE" "Press Enter or type 'q' to return to documentation menu..."
-                    read -r input </dev/tty
-                    if [[ "$input" == "q" ]] || [[ "$input" == "Q" ]]; then
-                        break
-                    fi
-                else
-                    print_color "$RED" "MANAGE_CATEGORIES_README.md not found! (Documentation is now integrated in README.md)"
-                    print_color "$BLUE" "Press Enter or type 'q' to return to documentation menu..."
-                    read -r input </dev/tty
-                    if [[ "$input" == "q" ]] || [[ "$input" == "Q" ]]; then
-                        break
-                    fi
-                fi
-                ;;
-            4)
-                if [[ -f "$SCRIPT_DIR/PROMPT_FORMAT.md" ]]; then
-                    less "$SCRIPT_DIR/PROMPT_FORMAT.md"
-                    print_color "$BLUE" "Press Enter or type 'q' to return to documentation menu..."
-                    read -r input </dev/tty
-                    if [[ "$input" == "q" ]] || [[ "$input" == "Q" ]]; then
-                        break
-                    fi
-                else
-                    print_color "$RED" "PROMPT_FORMAT.md not found! (Documentation is now integrated in README.md)"
-                    print_color "$BLUE" "Press Enter to return to documentation menu..."
-                    read -r input </dev/tty
-                    if [[ "$input" == "q" ]] || [[ "$input" == "Q" ]]; then
-                        break
-                    fi
-                fi
-                ;;
             5)
-                if [[ -f "$SCRIPT_DIR/SEARCH_README.md" ]]; then
-                    less "$SCRIPT_DIR/README.md"
-                    print_color "$BLUE" "Press Enter or type 'q' to return to documentation menu..."
-                    read -r input </dev/tty
-                    if [[ "$input" == "q" ]] || [[ "$input" == "Q" ]]; then
-                        break
-                    fi
-                else
-                    print_color "$RED" "SEARCH_README.md not found! (Documentation is now integrated in README.md)"
-                    print_color "$BLUE" "Press Enter or type 'q' to return to documentation menu..."
-                    read -r input </dev/tty
-                    if [[ "$input" == "q" ]] || [[ "$input" == "Q" ]]; then
-                        break
-                    fi
-                fi
+                show_command_help
                 ;;
             6)
-                print_header
-                print_color "$BOLD$CYAN" "🔧 Tool Help Commands"
-                echo ""
-                print_color "$GREEN" "Add Prompt Tool:"
-                print_color "$YELLOW" "  ./scripts/add_prompt.sh --help"
-                echo ""
-                print_color "$GREEN" "Search Tool:"
-                print_color "$YELLOW" "  ./scripts/search_prompts.sh --help"
-                echo ""
-                print_color "$GREEN" "Category Management:"
-                print_color "$YELLOW" "  ./scripts/manage_categories.sh --help"
-                echo ""
-                print_color "$GREEN" "Translation Tools:"
-                print_color "$YELLOW" "  ./scripts/translate_prompts.sh --help"
-                echo ""
-                print_color "$BLUE" "Press Enter or type 'q' to return to documentation menu..."
-                read -r input </dev/tty
-                    if [[ "$input" == "q" ]] || [[ "$input" == "Q" ]]; then
-                        break
-                    fi
+                show_languages_categories_guide
                 ;;
-            7|q|Q|"")
+            7)
+                show_smart_navigation_guide
+                ;;
+            8|q|Q|"")
                 break
                 ;;
             *)
-                print_color "$RED" "Invalid choice. Please select 1-7 or type 'q' to return."
+                print_color "$RED" "Invalid choice. Please select 1-8 or type 'q' to return."
                 sleep 1
                 ;;
         esac
     done
 }
 
+# Function to show quick start guide
+show_quick_start_guide() {
+    print_header
+    local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+    
+    print_color "$BOLD$CYAN" "$(get_string "QUICK_START_TITLE" "$interface_lang")"
+    echo ""
+    print_color "$GREEN" "🔍 Most Common Commands:"
+    echo ""
+    print_color "$YELLOW" "Find a Prompt:"
+    print_color "$CYAN" "  ./scripts/search_prompts.sh machine learning"
+    print_color "$CYAN" "  ./scripts/search_prompts.sh -i  # interactive mode"
+    echo ""
+    print_color "$YELLOW" "Add a New Prompt:"
+    print_color "$CYAN" "  ./scripts/add_prompt.sh"
+    print_color "$CYAN" "  # Follow the interactive prompts"
+    echo ""
+    print_color "$YELLOW" "Browse Categories:"
+    print_color "$CYAN" "  ./scripts/search_prompts.sh -l  # list all categories"
+    print_color "$CYAN" "  ./scripts/manage_categories.sh -l  # list areas/categories"
+    echo ""
+    print_color "$YELLOW" "Use Different Languages:"
+    print_color "$CYAN" "  Navigate to: Prompts/[LANGUAGE]/ (e.g., Prompts/ZH/, Prompts/JP/)"
+    echo ""
+    print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    print_color "$BLUE" "$(get_string "PRESS_ENTER_RETURN" "$interface_lang") documentation menu..."
+    read -r input </dev/tty
+    if [[ "$input" == "q" ]] || [[ "$input" == "Q" ]]; then
+        return
+    fi
+}
+
+# Function to show tools overview
+show_tools_overview() {
+    print_header
+    local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+    
+    print_color "$BOLD$CYAN" "$(get_string "TOOLS_OVERVIEW_TITLE" "$interface_lang")"
+    echo ""
+    print_color "$GREEN" "📝 Add Prompt Tool (add_prompt.sh):"
+    print_color "$CYAN" "  • Interactive prompt creation with validation"
+    print_color "$CYAN" "  • Auto-numbering and category selection"
+    print_color "$CYAN" "  • English content detection and preview"
+    echo ""
+    print_color "$GREEN" "🔍 Search Tool (search_prompts.sh):"
+    print_color "$CYAN" "  • Keyword search across all prompts"
+    print_color "$CYAN" "  • Category filtering and tag-based search"
+    print_color "$CYAN" "  • Interactive mode and verbose output"
+    echo ""
+    print_color "$GREEN" "🏷️ Category Management (manage_categories.sh):"
+    print_color "$CYAN" "  • View and add Research Areas"
+    print_color "$CYAN" "  • Manage Prompt Categories"
+    print_color "$CYAN" "  • Batch operations and duplicate prevention"
+    echo ""
+    print_color "$GREEN" "🌍 Translation Tools (translate_prompts.sh):"
+    print_color "$CYAN" "  • Status checking across 12 languages"
+    print_color "$CYAN" "  • Consistency verification"
+    print_color "$CYAN" "  • Prompt counting and statistics"
+    echo ""
+    print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    print_color "$BLUE" "$(get_string "PRESS_ENTER_RETURN" "$interface_lang") documentation menu..."
+    read -r input </dev/tty
+    if [[ "$input" == "q" ]] || [[ "$input" == "Q" ]]; then
+        return
+    fi
+}
+
+# Function to show structure and format guide
+show_structure_and_format() {
+    print_header
+    local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+    
+    print_color "$BOLD$CYAN" "$(get_string "STRUCTURE_FORMAT_TITLE" "$interface_lang")"
+    echo ""
+    print_color "$GREEN" "📂 Directory Structure:"
+    print_color "$CYAN" "  Prompts/"
+    print_color "$CYAN" "  ├── EN/ (English)     ├── JP/ (Japanese)   ├── ZH/ (Chinese)"
+    print_color "$CYAN" "  ├── DE/ (German)      ├── FR/ (French)     ├── ES/ (Spanish)"
+    print_color "$CYAN" "  ├── IT/ (Italian)     ├── PT/ (Portuguese) ├── RU/ (Russian)"
+    print_color "$CYAN" "  ├── AR/ (Arabic)      ├── KO/ (Korean)     └── HI/ (Hindi)"
+    echo ""
+    print_color "$GREEN" "📋 Prompt Format:"
+    print_color "$CYAN" "  ### [Number]. [Descriptive Title]"
+    print_color "$CYAN" "  **Tags:** \`Research Area\` | \`Prompt Category\`"
+    print_color "$CYAN" "  **Description:** Brief explanation..."
+    print_color "$CYAN" "  **Prompt:**"
+    print_color "$CYAN" "  \`\`\`"
+    print_color "$CYAN" "  [The actual prompt text goes here]"
+    print_color "$CYAN" "  \`\`\`"
+    echo ""
+    print_color "$GREEN" "📊 Categories (9 per language):"
+    print_color "$CYAN" "  • business-management.md    • computer-science.md"
+    print_color "$CYAN" "  • engineering.md           • general.md"
+    print_color "$CYAN" "  • humanities.md            • mathematics-statistics.md"
+    print_color "$CYAN" "  • medical-sciences.md      • natural-sciences.md"
+    print_color "$CYAN" "  • social-sciences.md"
+    echo ""
+    print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    print_color "$BLUE" "$(get_string "PRESS_ENTER_RETURN" "$interface_lang") documentation menu..."
+    read -r input </dev/tty
+    if [[ "$input" == "q" ]] || [[ "$input" == "Q" ]]; then
+        return
+    fi
+}
+
+# Function to show command help
+show_command_help() {
+    print_header
+    local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+    
+    print_color "$BOLD$CYAN" "$(get_string "COMMAND_HELP_TITLE" "$interface_lang")"
+    echo ""
+    print_color "$GREEN" "🛠️ Tool Help Commands:"
+    echo ""
+    print_color "$YELLOW" "Add Prompt Tool:"
+    print_color "$CYAN" "  ./scripts/add_prompt.sh --help"
+    echo ""
+    print_color "$YELLOW" "Search Tool:"
+    print_color "$CYAN" "  ./scripts/search_prompts.sh --help"
+    print_color "$CYAN" "  ./scripts/search_prompts.sh machine learning"
+    print_color "$CYAN" "  ./scripts/search_prompts.sh -c computer-science neural"
+    print_color "$CYAN" "  ./scripts/search_prompts.sh -t \"Data Analysis\""
+    echo ""
+    print_color "$YELLOW" "Category Management:"
+    print_color "$CYAN" "  ./scripts/manage_categories.sh --help"
+    print_color "$CYAN" "  ./scripts/manage_categories.sh -c computer-science"
+    print_color "$CYAN" "  ./scripts/manage_categories.sh -l"
+    echo ""
+    print_color "$YELLOW" "Translation Tools:"
+    print_color "$CYAN" "  ./scripts/translate_prompts.sh --help"
+    print_color "$CYAN" "  ./scripts/translate_prompts.sh -s  # status"
+    print_color "$CYAN" "  ./scripts/translate_prompts.sh -v  # verify"
+    print_color "$CYAN" "  ./scripts/translate_prompts.sh -c  # count"
+    echo ""
+    print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    print_color "$BLUE" "$(get_string "PRESS_ENTER_RETURN" "$interface_lang") documentation menu..."
+    read -r input </dev/tty
+    if [[ "$input" == "q" ]] || [[ "$input" == "Q" ]]; then
+        return
+    fi
+}
+
+# Function to show languages and categories guide
+show_languages_categories_guide() {
+    print_header
+    local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+    
+    print_color "$BOLD$CYAN" "$(get_string "LANGUAGES_GUIDE_TITLE" "$interface_lang")"
+    echo ""
+    print_color "$GREEN" "🌐 Supported Languages (12 total):"
+    echo ""
+    print_color "$CYAN" "🇺🇸 EN - English      🇯🇵 JP - Japanese    🇨🇳 ZH - Chinese"
+    print_color "$CYAN" "🇩🇪 DE - German       🇫🇷 FR - French      🇪🇸 ES - Spanish"
+    print_color "$CYAN" "🇮🇹 IT - Italian      🇵🇹 PT - Portuguese  🇷🇺 RU - Russian"
+    print_color "$CYAN" "🇸🇦 AR - Arabic       🇰🇷 KO - Korean      🇮🇳 HI - Hindi"
+    echo ""
+    print_color "$GREEN" "📚 Academic Disciplines:"
+    print_color "$CYAN" "  • Computer Science: AI, ML, Software Engineering, Data Science"
+    print_color "$CYAN" "  • Natural Sciences: Physics, Chemistry, Biology, Environmental"
+    print_color "$CYAN" "  • Engineering: Mechanical, Electrical, Civil, Biomedical"
+    print_color "$CYAN" "  • Medical Sciences: Clinical Research, Public Health, Biomedical"
+    print_color "$CYAN" "  • Social Sciences: Psychology, Sociology, Political Science"
+    print_color "$CYAN" "  • Humanities: Literature, Philosophy, History, Cultural Studies"
+    print_color "$CYAN" "  • Mathematics & Statistics: Pure Math, Applied Math, Statistical"
+    print_color "$CYAN" "  • Business & Management: Strategy, Marketing, Finance, Operations"
+    print_color "$CYAN" "  • General Academic: Interdisciplinary, Academic Writing, Research"
+    echo ""
+    print_color "$BOLD$GREEN" "Total: 108 category files across 12 languages"
+    echo ""
+    print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    print_color "$BLUE" "$(get_string "PRESS_ENTER_RETURN" "$interface_lang") documentation menu..."
+    read -r input </dev/tty
+    if [[ "$input" == "q" ]] || [[ "$input" == "Q" ]]; then
+        return
+    fi
+}
+
+# Function to show smart navigation guide
+show_smart_navigation_guide() {
+    print_header
+    local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+    
+    print_color "$BOLD$CYAN" "$(get_string "SMART_NAV_TITLE" "$interface_lang")"
+    echo ""
+    print_color "$GREEN" "Choose your path based on your role:"
+    echo ""
+    print_color "$YELLOW" "🆕 New User (Just getting started?):"
+    print_color "$CYAN" "  1. Read Overview section in README.md"
+    print_color "$CYAN" "  2. Try Quick Start & Common Tasks (option 1)"
+    print_color "$CYAN" "  3. Use Search Tool: ./scripts/search_prompts.sh -i"
+    print_color "$CYAN" "  4. Add your first prompt: ./scripts/add_prompt.sh"
+    echo ""
+    print_color "$YELLOW" "🔍 Prompt Hunter (Looking for existing prompts?):"
+    print_color "$CYAN" "  1. Use Search Tool (Main Menu → 2)"
+    print_color "$CYAN" "  2. Browse Categories: ./scripts/search_prompts.sh -l"
+    print_color "$CYAN" "  3. Check Languages & Categories Guide (option 6)"
+    print_color "$CYAN" "  4. Explore other languages in Prompts/ folders"
+    echo ""
+    print_color "$YELLOW" "✍️ Content Creator (Want to add prompts?):"
+    print_color "$CYAN" "  1. Use Add Prompt Tool (Main Menu → 1)"
+    print_color "$CYAN" "  2. Read Repository Structure & Format (option 3)"
+    print_color "$CYAN" "  3. Review Command Help & Examples (option 5)"
+    print_color "$CYAN" "  4. Check complete README.md for contribution guidelines"
+    echo ""
+    print_color "$YELLOW" "🛠️ Power User (Need advanced features?):"
+    print_color "$CYAN" "  1. All Tools Reference: Command Help & Examples (option 5)"
+    print_color "$CYAN" "  2. Translation Tools (Main Menu → 5)"
+    print_color "$CYAN" "  3. Category Management (Main Menu → 3)"
+    print_color "$CYAN" "  4. Complete Documentation: README.md (option 4)"
+    echo ""
+    print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    print_color "$BLUE" "$(get_string "PRESS_ENTER_RETURN" "$interface_lang") documentation menu..."
+    read -r input </dev/tty
+    if [[ "$input" == "q" ]] || [[ "$input" == "Q" ]]; then
+        return
+    fi
+}
+
 # Function to show translation menu
 show_translation_menu() {
     while true; do
         print_header
-        print_color "$BOLD$CYAN" "🌍 Translation Tools & Multilingual Management"
+        local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+        
+        print_color "$BOLD$CYAN" "$(get_string "TRANSLATION_MENU_TITLE" "$interface_lang")"
         echo ""
-        print_color "$GREEN" "  1. 📊 Translation Status"
+        print_color "$GREEN" "  1. $(get_string "TRANSLATION_STATUS" "$interface_lang")"
         print_color "$YELLOW" "     └─ View translation status across all 12 languages"
         echo ""
-        print_color "$GREEN" "  2. 🔍 Verify Consistency"
+        print_color "$GREEN" "  2. $(get_string "VERIFY_CONSISTENCY" "$interface_lang")"
         print_color "$YELLOW" "     └─ Check file consistency across all languages"
         echo ""
-        print_color "$GREEN" "  3. 📈 Count Prompts"
+        print_color "$GREEN" "  3. $(get_string "COUNT_PROMPTS" "$interface_lang")"
         print_color "$YELLOW" "     └─ Count prompts in each language"
         echo ""
-        print_color "$GREEN" "  4. 🌐 Language Overview"
+        print_color "$GREEN" "  4. $(get_string "LANGUAGE_OVERVIEW" "$interface_lang")"
         print_color "$YELLOW" "     └─ Show supported languages and statistics"
         echo ""
-        print_color "$GREEN" "  5. 🔙 Back to Main Menu"
-        print_color "$YELLOW" "  q. 🔙 Quick Return (or just press Enter)"
+        print_color "$GREEN" "  5. $(get_string "BACK_TO_MENU" "$interface_lang")"
         echo ""
         print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo ""
         
-        echo -n "Select option (1-5) or type 'q' to return: "
+        echo -n "$(get_string "SELECT_OPTION" "$interface_lang") (1-5) or type 'q' to return: "
         read -r choice </dev/tty
         
         case $choice in
@@ -521,7 +706,7 @@ main() {
         print_header
         show_main_menu
         
-        echo -n "Select option (1-8) or type 'q' to exit: "
+        echo -n "Select option (1-8): "
         read -r choice </dev/tty
         
         case $choice in
@@ -532,21 +717,22 @@ main() {
                 # Show search submenu
                 while true; do
                     print_header
-                    print_color "$BOLD$CYAN" "🔍 Search Prompts"
+                    local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+                    
+                    print_color "$BOLD$CYAN" "$(get_string "SEARCH_MENU_TITLE" "$interface_lang")"
                     echo ""
-                    print_color "$GREEN" "  1. 🔍 Interactive Search"
-                    print_color "$GREEN" "  2. 📝 Quick Keyword Search"
-                    print_color "$GREEN" "  3. 📂 Browse by Category"
-                    print_color "$GREEN" "  4. 🏷️  Search by Tag"
-                    print_color "$GREEN" "  5. 📋 List All Categories"
-                    print_color "$GREEN" "  6. 📋 Copy Prompt to Clipboard"
-                    print_color "$GREEN" "  7. 🔙 Back to Main Menu"
-                    print_color "$YELLOW" "  q. 🔙 Quick Return (or just press Enter)"
+                    print_color "$GREEN" "  1. $(get_string "INTERACTIVE_SEARCH" "$interface_lang")"
+                    print_color "$GREEN" "  2. $(get_string "QUICK_KEYWORD_SEARCH" "$interface_lang")"
+                    print_color "$GREEN" "  3. $(get_string "BROWSE_BY_CATEGORY" "$interface_lang")"
+                    print_color "$GREEN" "  4. $(get_string "SEARCH_BY_TAG" "$interface_lang")"
+                    print_color "$GREEN" "  5. $(get_string "LIST_ALL_CATEGORIES" "$interface_lang")"
+                    print_color "$GREEN" "  6. $(get_string "COPY_PROMPT_CLIPBOARD" "$interface_lang")"
+                    print_color "$GREEN" "  7. $(get_string "BACK_TO_MENU" "$interface_lang")"
                     echo ""
                     print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
                     echo ""
                     
-                    echo -n "Select search option (1-7) or type 'q' to return: "
+                    echo -n "$(get_string "SELECT_OPTION" "$interface_lang") (1-7) or type 'q' to return: "
                     read -r search_choice </dev/tty
                     
                     case $search_choice in
@@ -682,13 +868,13 @@ main() {
             7)
                 run_tool "scripts/manage_profile.sh" "Profile Management Tool"
                 ;;
-            8|q|Q|"")
+            8)
                 print_color "$GREEN" "👋 Thank you for using Awesome Academic Prompts Toolkit!"
                 print_color "$BLUE" "Happy researching! 🎓✨"
                 exit 0
                 ;;
             *)
-                print_color "$RED" "Invalid choice. Please select 1-8 or type 'q' to exit."
+                print_color "$RED" "Invalid choice. Please select 1-8."
                 sleep 1
                 ;;
         esac

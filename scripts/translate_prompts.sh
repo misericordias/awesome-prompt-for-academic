@@ -15,15 +15,42 @@ NC='\033[0m'
 # Script directory (parent of scripts folder)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROMPTS_DIR="$SCRIPT_DIR/Prompts"
+PROFILE_FILE="$SCRIPT_DIR/Profiles/user_profile.conf"
+
+# Load language strings
+source "$SCRIPT_DIR/Profiles/language_strings.sh" 2>/dev/null || true
 
 # Supported languages
 LANGUAGES=("EN" "JP" "ZH" "DE" "FR" "ES" "IT" "PT" "RU" "AR" "KO" "HI")
 LANGUAGE_NAMES=("English" "Japanese" "Chinese" "German" "French" "Spanish" "Italian" "Portuguese" "Russian" "Arabic" "Korean" "Hindi")
 
+# Function to read profile value
+read_profile_value() {
+    local key="$1"
+    local default_value="$2"
+    
+    if [[ -f "$PROFILE_FILE" ]]; then
+        local value=$(grep "^$key=" "$PROFILE_FILE" | cut -d'=' -f2 | cut -d'#' -f1 | tr -d ' ')
+        if [[ -n "$value" ]]; then
+            echo "$value"
+        else
+            echo "$default_value"
+        fi
+    else
+        echo "$default_value"
+    fi
+}
+
 print_color() {
     local color=$1
     local message=$2
-    echo -e "${color}${message}${NC}"
+    local show_colors=$(read_profile_value "SHOW_COLORS" "true")
+    
+    if [[ "$show_colors" == "true" ]]; then
+        echo -e "${color}${message}${NC}"
+    else
+        echo "$message"
+    fi
 }
 
 show_usage() {

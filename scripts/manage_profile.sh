@@ -20,11 +20,20 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROFILE_FILE="$SCRIPT_DIR/Profiles/user_profile.conf"
 DEFAULT_PROFILE="$SCRIPT_DIR/Profiles/default_profile.conf"
 
+# Load language strings
+source "$SCRIPT_DIR/Profiles/language_strings.sh" 2>/dev/null || true
+
 # Function to print colored output
 print_color() {
     local color=$1
     local message=$2
-    echo -e "${color}${message}${NC}"
+    local show_colors=$(read_profile_value "SHOW_COLORS" "true")
+    
+    if [[ "$show_colors" == "true" ]]; then
+        echo -e "${color}${message}${NC}"
+    else
+        echo "$message"
+    fi
 }
 
 # Function to print header
@@ -54,6 +63,7 @@ SHOW_COLORS=true           # Enable colored output (true/false)
 AUTO_SAVE=true            # Auto-save settings (true/false)
 
 # Interface Settings
+INTERFACE_LANGUAGE=EN      # Interface language (EN,ZH,ES,HI,AR,PT,RU,JP,DE,FR)
 DEFAULT_LANGUAGE=EN        # Default language for prompts (EN, ZH, JP, etc.)
 DEFAULT_CATEGORY=general  # Default category to start with
 INTERFACE_STYLE=modern     # Interface style (modern, classic, minimal)
@@ -85,7 +95,7 @@ read_profile_value() {
     local default_value="$2"
     
     if [[ -f "$PROFILE_FILE" ]]; then
-        local value=$(grep "^$key=" "$PROFILE_FILE" | cut -d'=' -f2 | tr -d ' ')
+        local value=$(grep "^$key=" "$PROFILE_FILE" | cut -d'=' -f2 | cut -d'#' -f1 | tr -d ' ')
         if [[ -n "$value" ]]; then
             echo "$value"
         else
@@ -117,7 +127,9 @@ write_profile_value() {
 # Function to show current profile
 show_current_profile() {
     print_header
-    print_color "$BOLD$CYAN" "📋 Current User Profile Settings"
+    local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+    
+    print_color "$BOLD$CYAN" "$(get_string "CURRENT_PROFILE_TITLE" "$interface_lang")"
     echo ""
     
     if [[ ! -f "$PROFILE_FILE" ]]; then
@@ -133,6 +145,7 @@ show_current_profile() {
     local show_welcome=$(read_profile_value "SHOW_WELCOME" "true")
     local show_colors=$(read_profile_value "SHOW_COLORS" "true")
     local auto_save=$(read_profile_value "AUTO_SAVE" "true")
+    local interface_language=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
     local default_language=$(read_profile_value "DEFAULT_LANGUAGE" "EN")
     local default_category=$(read_profile_value "DEFAULT_CATEGORY" "general")
     local interface_style=$(read_profile_value "INTERFACE_STYLE" "modern")
@@ -149,6 +162,7 @@ show_current_profile() {
     echo ""
     
     print_color "$GREEN" "🎨 Interface Settings:"
+    print_color "$CYAN" "  Interface Language: $(get_language_name "$interface_language") ✅ IMPLEMENTED"
     print_color "$CYAN" "  Default Language: $default_language"
     print_color "$CYAN" "  Default Category: $default_category"
     print_color "$CYAN" "  Interface Style:  $interface_style"
@@ -175,19 +189,21 @@ show_current_profile() {
 edit_profile_settings() {
     while true; do
         print_header
-        print_color "$BOLD$CYAN" "✏️  Edit Profile Settings"
+        local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+        
+        print_color "$BOLD$CYAN" "$(get_string "EDIT_SETTINGS_TITLE" "$interface_lang")"
         echo ""
         print_color "$GREEN" "  1. 🔧 Display Settings"
         print_color "$GREEN" "  2. 🎨 Interface Settings"
         print_color "$GREEN" "  3. 🔍 Search Settings"
         print_color "$GREEN" "  4. 🛠️  Tool Settings"
         print_color "$GREEN" "  5. 🔄 Reset to Defaults"
-        print_color "$GREEN" "  6. 🔙 Back to Profile Menu"
+        print_color "$GREEN" "  6. $(get_string "BACK_TO_PROFILE_MENU" "$interface_lang")"
         echo ""
         print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo ""
         
-        echo -n "Select option (1-6): "
+        echo -n "$(get_string "SELECT_OPTION" "$interface_lang") (1-6): "
         read -r choice </dev/tty
         
         case $choice in
@@ -221,21 +237,23 @@ edit_profile_settings() {
 edit_display_settings() {
     while true; do
         print_header
-        print_color "$BOLD$CYAN" "🔧 Display Settings"
+        local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+        
+        print_color "$BOLD$CYAN" "$(get_string "DISPLAY_SETTINGS_TITLE" "$interface_lang")"
         echo ""
         
         local show_welcome=$(read_profile_value "SHOW_WELCOME" "true")
         local show_colors=$(read_profile_value "SHOW_COLORS" "true")
         local auto_save=$(read_profile_value "AUTO_SAVE" "true")
         
-        print_color "$GREEN" "Current Settings:"
+        print_color "$GREEN" "$(get_string "CURRENT_SETTINGS" "$interface_lang")"
         print_color "$CYAN" "  1. Show Welcome: $show_welcome ✅ IMPLEMENTED"
-        print_color "$CYAN" "  2. Show Colors:  $show_colors ⚠️  TODO: Not implemented in main scripts"
-        print_color "$CYAN" "  3. Auto Save:    $auto_save ⚠️  2: Not implemented in main scripts"
-        print_color "$GREEN" "  4. 🔙 Back to Edit Menu"
+        print_color "$CYAN" "  2. Show Colors:  $show_colors ✅ IMPLEMENTED"
+        print_color "$CYAN" "  3. Auto Save:    $auto_save ⚠️  TODO: Not implemented in main scripts"
+        print_color "$GREEN" "  4. $(get_string "BACK_TO_EDIT_MENU" "$interface_lang")"
         echo ""
         
-        echo -n "Select setting to edit (1-4): "
+        echo -n "$(get_string "SELECT_OPTION" "$interface_lang") (1-4): "
         read -r setting_choice </dev/tty
         
         case $setting_choice in
@@ -257,11 +275,9 @@ edit_display_settings() {
                 if [[ "$value" =~ ^[Yy]$ ]]; then
                     write_profile_value "SHOW_COLORS" "true"
                     print_color "$GREEN" "✅ Colored output enabled"
-                    print_color "$YELLOW" "⚠️  Note: This setting is not yet implemented in the main scripts"
                 else
                     write_profile_value "SHOW_COLORS" "false"
                     print_color "$GREEN" "✅ Colored output disabled"
-                    print_color "$YELLOW" "⚠️  Note: This setting is not yet implemented in the main scripts"
                 fi
                 sleep 1
                 ;;
@@ -294,25 +310,32 @@ edit_display_settings() {
 edit_interface_settings() {
     while true; do
         print_header
-        print_color "$BOLD$CYAN" "🎨 Interface Settings"
+        local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+        
+        print_color "$BOLD$CYAN" "$(get_string "INTERFACE_SETTINGS_TITLE" "$interface_lang")"
         echo ""
         
+        local interface_language=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
         local default_language=$(read_profile_value "DEFAULT_LANGUAGE" "EN")
         local default_category=$(read_profile_value "DEFAULT_CATEGORY" "general")
         local interface_style=$(read_profile_value "INTERFACE_STYLE" "modern")
         
-        print_color "$GREEN" "Current Settings:"
-        print_color "$CYAN" "  1. Default Language: $default_language ⚠️  TODO: Not implemented in main scripts"
-        print_color "$CYAN" "  2. Default Category: $default_category ⚠️  TODO: Not implemented in main scripts"
-        print_color "$CYAN" "  3. Interface Style:  $interface_style ⚠️  TODO: Not implemented in main scripts"
-        print_color "$GREEN" "  4. 🔙 Back to Edit Menu"
+        print_color "$GREEN" "$(get_string "CURRENT_SETTINGS" "$interface_lang")"
+        print_color "$CYAN" "  1. Interface Language: $(get_language_name "$interface_language") ✅ IMPLEMENTED"
+        print_color "$CYAN" "  2. Default Language: $default_language ⚠️  TODO: Not implemented in main scripts"
+        print_color "$CYAN" "  3. Default Category: $default_category ⚠️  TODO: Not implemented in main scripts"
+        print_color "$CYAN" "  4. Interface Style:  $interface_style ⚠️  TODO: Not implemented in main scripts"
+        print_color "$GREEN" "  5. $(get_string "BACK_TO_EDIT_MENU" "$interface_lang")"
         echo ""
         
-        echo -n "Select setting to edit (1-4): "
+        echo -n "$(get_string "SELECT_OPTION" "$interface_lang") (1-5): "
         read -r setting_choice </dev/tty
         
         case $setting_choice in
             1)
+                show_interface_language_menu
+                ;;
+            2)
                 echo -n "Enter default language (EN, ZH, JP, DE, FR, ES, IT, PT, RU, AR, KO, HI): "
                 read -r value </dev/tty
                 if [[ -n "$value" ]]; then
@@ -322,7 +345,7 @@ edit_interface_settings() {
                 fi
                 sleep 1
                 ;;
-            2)
+            3)
                 echo -n "Enter default category: "
                 read -r value </dev/tty
                 if [[ -n "$value" ]]; then
@@ -332,7 +355,7 @@ edit_interface_settings() {
                 fi
                 sleep 1
                 ;;
-            3)
+            4)
                 echo -n "Select interface style (modern/classic/minimal): "
                 read -r value </dev/tty
                 if [[ "$value" =~ ^(modern|classic|minimal)$ ]]; then
@@ -344,14 +367,64 @@ edit_interface_settings() {
                 fi
                 sleep 1
                 ;;
-            4)
+            5)
                 break
                 ;;
             *)
-                print_color "$RED" "Invalid choice. Please select 1-4."
+                print_color "$RED" "Invalid choice. Please select 1-5."
                 sleep 1
                 ;;
         esac
+    done
+}
+
+# Function to show interface language selection menu
+show_interface_language_menu() {
+    while true; do
+        print_header
+        local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+        
+        print_color "$BOLD$CYAN" "$(get_string "INTERFACE_LANG_SELECTION" "$interface_lang")"
+        echo ""
+        print_color "$GREEN" "$(get_string "SELECT_LANGUAGE" "$interface_lang")"
+        echo ""
+        
+        local current_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+        local supported_langs=($(get_supported_languages))
+        local i=1
+        
+        for lang in "${supported_langs[@]}"; do
+            local lang_name=$(get_language_name "$lang")
+            if [[ "$lang" == "$current_lang" ]]; then
+                print_color "$GREEN" "  $i. $lang_name ✅ (Current)"
+            else
+                print_color "$CYAN" "  $i. $lang_name"
+            fi
+            ((i++))
+        done
+        
+        print_color "$GREEN" "  $i. $(get_string "BACK_TO_EDIT_MENU" "$interface_lang")"
+        echo ""
+        print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+        
+        echo -n "$(get_string "SELECT_OPTION" "$interface_lang") (1-$i): "
+        read -r choice </dev/tty
+        
+        if [[ "$choice" =~ ^[0-9]+$ ]] && [[ $choice -ge 1 ]] && [[ $choice -le ${#supported_langs[@]} ]]; then
+            local selected_lang="${supported_langs[$((choice-1))]}"
+            write_profile_value "INTERFACE_LANGUAGE" "$selected_lang"
+            local lang_name=$(get_language_name "$selected_lang")
+            print_color "$GREEN" "✅ Interface language changed to $lang_name"
+            print_color "$BLUE" "$(get_string "CHANGES_TAKE_EFFECT" "$interface_lang")"
+            sleep 2
+            break
+        elif [[ $choice -eq $i ]]; then
+            break
+        else
+            print_color "$RED" "$(get_string "INVALID_CHOICE" "$interface_lang") 1-$i."
+            sleep 1
+        fi
     done
 }
 
@@ -512,18 +585,20 @@ reset_to_defaults() {
 show_profile_menu() {
     while true; do
         print_header
-        print_color "$BOLD$CYAN" "⚙️  User Profile Management"
+        local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+        
+        print_color "$BOLD$CYAN" "$(get_string "PROFILE_MENU_TITLE" "$interface_lang")"
         echo ""
-        print_color "$GREEN" "  1. 📋 View Current Profile"
-        print_color "$GREEN" "  2. ✏️  Edit Settings"
-        print_color "$GREEN" "  3. 🔄 Reset to Defaults"
-        print_color "$GREEN" "  4. 📁 Open Profile File"
-        print_color "$GREEN" "  5. 🔙 Back to Main Menu"
+        print_color "$GREEN" "  1. $(get_string "VIEW_CURRENT_PROFILE" "$interface_lang")"
+        print_color "$GREEN" "  2. $(get_string "EDIT_SETTINGS" "$interface_lang")"
+        print_color "$GREEN" "  3. $(get_string "RESET_TO_DEFAULTS" "$interface_lang")"
+        print_color "$GREEN" "  4. $(get_string "OPEN_PROFILE_FILE" "$interface_lang")"
+        print_color "$GREEN" "  5. $(get_string "BACK_TO_MENU" "$interface_lang")"
         echo ""
         print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo ""
         
-        echo -n "Select option (1-5): "
+        echo -n "$(get_string "SELECT_OPTION" "$interface_lang") (1-5): "
         read -r choice </dev/tty
         
         case $choice in
