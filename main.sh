@@ -17,12 +17,30 @@ NC='\033[0m' # No Color
 
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROFILE_FILE="$SCRIPT_DIR/Profiles/user_profile.conf"
 
 # Function to print colored output
 print_color() {
     local color=$1
     local message=$2
     echo -e "${color}${message}${NC}"
+}
+
+# Function to read profile value
+read_profile_value() {
+    local key="$1"
+    local default_value="$2"
+    
+    if [[ -f "$PROFILE_FILE" ]]; then
+        local value=$(grep "^$key=" "$PROFILE_FILE" | cut -d'=' -f2 | tr -d ' ')
+        if [[ -n "$value" ]]; then
+            echo "$value"
+        else
+            echo "$default_value"
+        fi
+    else
+        echo "$default_value"
+    fi
 }
 
 # Function to print header
@@ -61,7 +79,10 @@ show_main_menu() {
     print_color "$GREEN" "  6. 📚 Documentation"
     print_color "$YELLOW" "     └─ Access help and documentation"
     echo ""
-    print_color "$GREEN" "  7. 🚪 Exit"
+    print_color "$GREEN" "  7. ⚙️  Settings"
+    print_color "$YELLOW" "     └─ Manage user preferences and configuration"
+    echo ""
+    print_color "$GREEN" "  8. 🚪 Exit"
     print_color "$YELLOW" "  q. 🚪 Quick Exit (or just press Enter)"
     echo ""
     print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -440,6 +461,10 @@ check_scripts() {
         missing_scripts+=("scripts/translate_prompts.sh")
     fi
     
+    if [[ ! -f "$SCRIPT_DIR/scripts/manage_profile.sh" ]]; then
+        missing_scripts+=("scripts/manage_profile.sh")
+    fi
+    
     if [[ ${#missing_scripts[@]} -gt 0 ]]; then
         print_color "$RED" "⚠️  Warning: Missing scripts:"
         for script in "${missing_scripts[@]}"; do
@@ -496,7 +521,7 @@ main() {
         print_header
         show_main_menu
         
-        echo -n "Select option (1-7) or type 'q' to exit: "
+        echo -n "Select option (1-8) or type 'q' to exit: "
         read -r choice </dev/tty
         
         case $choice in
@@ -654,13 +679,16 @@ main() {
             6)
                 show_documentation_menu
                 ;;
-            7|q|Q|"")
+            7)
+                run_tool "scripts/manage_profile.sh" "Profile Management Tool"
+                ;;
+            8|q|Q|"")
                 print_color "$GREEN" "👋 Thank you for using Awesome Academic Prompts Toolkit!"
                 print_color "$BLUE" "Happy researching! 🎓✨"
                 exit 0
                 ;;
             *)
-                print_color "$RED" "Invalid choice. Please select 1-7 or type 'q' to exit."
+                print_color "$RED" "Invalid choice. Please select 1-8 or type 'q' to exit."
                 sleep 1
                 ;;
         esac
@@ -669,7 +697,10 @@ main() {
 
 # Show welcome message on first run
 show_welcome() {
-    if [[ "${1:-}" != "--no-welcome" ]]; then
+    # Check if welcome should be shown based on profile
+    local show_welcome_setting=$(read_profile_value "SHOW_WELCOME" "true")
+    
+    if [[ "${1:-}" != "--no-welcome" ]] && [[ "$show_welcome_setting" == "true" ]]; then
         print_header
         print_color "$YELLOW" "Welcome to the Academic Prompts Toolkit! 🎉"
         echo ""
