@@ -1,9 +1,10 @@
 #!/opt/homebrew/bin/bash
 
-# Prompt Search CLI Tool
-# Search academic prompts by keywords, tags, categories, and more
+# Simple Prompt Search Tool
+# Search academic prompts by keywords across all categories
 
-set -euo pipefail
+# Disabled strict error handling to prevent early exit on search results
+# set -euo pipefail
 
 # Colors for better UX
 RED='\033[0;31m'
@@ -12,182 +13,63 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 MAGENTA='\033[0;35m'
+BOLD='\033[1m'
 NC='\033[0m' # No Color
 
-# Script directory (parent of scripts folder)
+# Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROMPTS_DIR="$SCRIPT_DIR/Prompts/EN"
 README_FILE="$SCRIPT_DIR/README.md"
-PROFILE_FILE="$SCRIPT_DIR/Profiles/user_profile.conf"
 
-# Load language strings
-source "$SCRIPT_DIR/Profiles/language_strings.sh" 2>/dev/null || true
+# Global variable for search results
+SEARCH_RESULTS_COUNT=0
+SEARCH_RESULTS_TITLES=()
+SEARCH_RESULTS_FILES=()
+SEARCH_RESULTS_LINES=()
 
-# Function to read profile value
-read_profile_value() {
-    local key="$1"
-    local default_value="$2"
+# Function to clear search results
+clear_search_results() {
+    SEARCH_RESULTS_COUNT=0
+    SEARCH_RESULTS_TITLES=()
+    SEARCH_RESULTS_FILES=()
+    SEARCH_RESULTS_LINES=()
+}
+
+# Function to add search results
+add_search_results() {
+    # Append the new results to global arrays
+    SEARCH_RESULTS_TITLES+=("$1")
+    SEARCH_RESULTS_FILES+=("$2")
+    SEARCH_RESULTS_LINES+=("$3")
     
-    if [[ -f "$PROFILE_FILE" ]]; then
-        local value=$(grep "^$key=" "$PROFILE_FILE" | cut -d'=' -f2 | cut -d'#' -f1 | tr -d ' ')
-        if [[ -n "$value" ]]; then
-            echo "$value"
-        else
-            echo "$default_value"
-        fi
-    else
-        echo "$default_value"
-    fi
+    # Update the count
+    SEARCH_RESULTS_COUNT=${#SEARCH_RESULTS_TITLES[@]}
 }
 
 # Function to print colored output
 print_color() {
     local color=$1
     local message=$2
-    local show_colors=$(read_profile_value "SHOW_COLORS" "true")
-    
-    if [[ "$show_colors" == "true" ]]; then
-        echo -e "${color}${message}${NC}"
-    else
-        echo "$message"
-    fi
-}
-
-# Function to detect clipboard command for the current OS
-get_clipboard_command() {
-    if command -v pbcopy >/dev/null 2>&1; then
-        echo "pbcopy"  # macOS
-    elif command -v xclip >/dev/null 2>&1; then
-        echo "xclip -selection clipboard"  # Linux with xclip
-    elif command -v xsel >/dev/null 2>&1; then
-        echo "xsel --clipboard --input"  # Linux with xsel
-    elif command -v clip.exe >/dev/null 2>&1; then
-        echo "clip.exe"  # Windows with clip.exe
-    else
-        echo ""
-    fi
-}
-
-# Function to copy text to clipboard
-copy_to_clipboard() {
-    local text="$1"
-    local clipboard_cmd=$(get_clipboard_command)
-    
-    if [[ -z "$clipboard_cmd" ]]; then
-        print_color "$RED" "Error: No clipboard command found. Please install one of:"
-        echo "  - macOS: pbcopy (built-in)"
-        echo "  - Linux: xclip or xsel"
-        echo "  - Windows: clip.exe (built-in)"
-        return 1
-    fi
-    
-    echo "$text" | eval "$clipboard_cmd"
-    if [[ $? -eq 0 ]]; then
-        print_color "$GREEN" "✅ Prompt copied to clipboard successfully!"
-        return 0
-    else
-        print_color "$RED" "Error: Failed to copy to clipboard"
-        return 1
-    fi
-}
-
-# Function to extract prompt content (main part only)
-extract_prompt_content() {
-    local file="$1"
-    local prompt_number="$2"
-    
-    # Find the prompt section - look for the main prompt (not nested ones)
-    local prompt_start=$(grep -n "^### $prompt_number\." "$file" | head -n1 | cut -d: -f1)
-    if [[ -z "$prompt_start" ]]; then
-        return 1
-    fi
-    
-    # Find the next main prompt or end of file
-    local next_prompt=$(grep -n "^### [0-9]\." "$file" | grep -A1 "^$prompt_start:" | tail -n1 | cut -d: -f1)
-    if [[ -z "$next_prompt" ]]; then
-        # If no next prompt, read to end of file
-        local prompt_end=$(wc -l < "$file")
-    else
-        local prompt_end=$((next_prompt - 1))
-    fi
-    
-    # Extract the prompt section
-    local prompt_section=$(sed -n "${prompt_start},${prompt_end}p" "$file")
-    
-    # Extract only the prompt content (between ``` blocks)
-    local prompt_content=$(echo "$prompt_section" | sed -n '/```/,/```/p' | sed '1d' | sed '$d')
-    
-    # If no code blocks found, fall back to removing title, tags, and description
-    if [[ -z "$prompt_content" ]]; then
-        prompt_content=$(echo "$prompt_section" | sed '/^### [0-9]/d' | sed '/^\*\*Tags:\*\*/d' | sed '/^\*\*Description:\*\*/d' | sed '/^[[:space:]]*$/d')
-    fi
-    
-    # Check if content is empty or only contains whitespace
-    if [[ -z "$prompt_content" ]] || [[ "$prompt_content" =~ ^[[:space:]]*$ ]]; then
-        return 1
-    fi
-    
-    echo "$prompt_content"
-}
-
-# Function to copy prompt to clipboard
-copy_prompt_to_clipboard() {
-    local prompt_number="$1"
-    local language="${2:-EN}"
-    local category="${3:-}"
-    
-    # For now, we'll extract from README.md since that's where the actual prompts are
-    if [[ ! -f "$README_FILE" ]]; then
-        print_color "$RED" "Error: README.md file not found at $README_FILE"
-        return 1
-    fi
-    
-    # Extract prompt content from README.md
-    local prompt_content=$(extract_prompt_content "$README_FILE" "$prompt_number")
-    local extract_result=$?
-    
-    if [[ $extract_result -eq 0 ]] && [[ -n "$prompt_content" ]]; then
-        print_color "$BLUE" "Found prompt $prompt_number in README.md"
-        copy_to_clipboard "$prompt_content"
-    else
-        print_color "$RED" "Error: Prompt $prompt_number not found in README.md"
-        return 1
-    fi
-    
-    # Note: Language and category support will be implemented when actual prompt files are created
-    if [[ "$language" != "EN" ]] || [[ -n "$category" ]]; then
-        print_color "$YELLOW" "Note: Language and category filtering not yet implemented. Extracting from README.md"
-    fi
+    echo -e "${color}${message}${NC}"
 }
 
 # Function to show usage
 show_usage() {
-    print_color "$BLUE" "🔍 Prompt Search CLI Tool"
+    print_color "$BLUE" "🔍 Simple Prompt Search Tool"
     echo ""
     echo "Usage: $0 [OPTIONS] [KEYWORDS...]"
     echo ""
     echo "Options:"
     echo "  -h, --help              Show this help message"
-    echo "  -c, --category CATEGORY Search in specific category file"
-    echo "  -t, --tag TAG           Search by specific tag"
-    echo "  -a, --area AREA         Search by research area"
     echo "  -i, --interactive       Interactive search mode"
     echo "  -l, --list-categories   List all available categories"
-    echo "  -v, --verbose           Show detailed results"
-    echo "  --case-sensitive        Case-sensitive search"
-    echo "  --exact-match           Exact phrase matching"
-    echo "  --copy PROMPT_NUM       Copy specific prompt to clipboard"
-    echo "  --lang LANGUAGE         Language for prompt (default: EN)"
+    echo "  -c, --category CATEGORY Search in specific category"
     echo ""
     echo "Examples:"
     echo "  $0 machine learning                    # Search for 'machine learning'"
     echo "  $0 -c computer-science neural          # Search 'neural' in computer science"
-    echo "  $0 -t 'Data Analysis' statistics       # Search by tag and keyword"
     echo "  $0 -i                                  # Interactive mode"
-    echo "  $0 --exact-match 'literature review'  # Exact phrase search"
-    echo "  $0 --copy 1                            # Copy prompt 1 to clipboard"
-    echo "  $0 --copy 5 --lang ZH                 # Copy prompt 5 in Chinese to clipboard"
-    echo "  $0 --copy 3 -c computer-science       # Copy prompt 3 from computer-science to clipboard"
+    echo "  $0 -l                                  # List all categories"
     echo ""
 }
 
@@ -213,124 +95,325 @@ list_categories() {
     echo ""
 }
 
-# Function to extract prompt info
-extract_prompt_info() {
-    local file="$1"
-    local line_num="$2"
-    local context_lines="${3:-5}"
-    
-    # Get the prompt title (current line)
-    local title=$(sed -n "${line_num}p" "$file")
-    
-    # Get the next few lines for tags and description
-    local end_line=$((line_num + context_lines))
-    local content=$(sed -n "${line_num},${end_line}p" "$file")
-    
-    echo "$content"
-}
-
-# Function to search in a specific file
+# Function to search in a file
 search_in_file() {
     local file="$1"
     local search_terms=("${@:2}")
-    local category=$(basename "$file" .md)
     local found_results=0
     
-    # Build grep pattern
-    local grep_pattern=""
-    local grep_options="-n"
-    
-    if [[ "$CASE_SENSITIVE" == "false" ]]; then
-        grep_options="$grep_options -i"
-    fi
-    
-    if [[ "$EXACT_MATCH" == "true" ]]; then
-        # For exact match, join terms with spaces
-        grep_pattern=$(IFS=' '; echo "${search_terms[*]}")
-    else
-        # For flexible search, create pattern that matches any term
-        grep_pattern=$(IFS='|'; echo "${search_terms[*]}")
+    # Check if file exists and is readable
+    if [[ ! -f "$file" ]] || [[ ! -r "$file" ]]; then
+        return 0
     fi
     
     # Search for prompts (lines starting with ###)
-    local prompt_lines=$(grep -n "^### [0-9]" "$file" 2>/dev/null || true)
+    local prompt_lines_raw=$(grep -n "^### [0-9]" "$file" 2>/dev/null || true)
     
-    if [[ -z "$prompt_lines" ]]; then
+    if [[ -z "$prompt_lines_raw" ]]; then
         return 0
     fi
     
     # Check each prompt
     while IFS= read -r prompt_line; do
         local line_num=$(echo "$prompt_line" | cut -d: -f1)
-        local next_prompt_line=$((line_num + 20)) # Look ahead 20 lines for content
+        local prompt_title=$(echo "$prompt_line" | cut -d: -f2-)
         
-        # Extract the prompt section
+        # Look ahead 100 lines for content (prompts can be longer and in code blocks)
+        local next_prompt_line=$((line_num + 100))
         local prompt_section=$(sed -n "${line_num},${next_prompt_line}p" "$file")
         
-        # Check if search terms match in this section
+        # Check if any search term matches in this section
         local matches=false
-        if [[ "$EXACT_MATCH" == "true" ]]; then
-            if echo "$prompt_section" | grep -q $grep_options "$grep_pattern"; then
+        for term in "${search_terms[@]}"; do
+            if echo "$prompt_section" | grep -qi "$term"; then
                 matches=true
+                break
             fi
-        else
-            # Check if any search term matches
-            for term in "${search_terms[@]}"; do
-                if echo "$prompt_section" | grep -q $grep_options "$term"; then
-                    matches=true
-                    break
-                fi
-            done
-        fi
+        done
         
         if [[ "$matches" == "true" ]]; then
             ((found_results++))
             
-            # Extract and display the result
-            local title=$(echo "$prompt_line" | cut -d: -f2-)
-            print_color "$GREEN" "📍 Found in $category:"
-            print_color "$CYAN" "$title"
-            
-            if [[ "$VERBOSE" == "true" ]]; then
-                # Show more details
-                local tags_line=$(sed -n "$((line_num + 2))p" "$file" 2>/dev/null || echo "")
-                local desc_line=$(sed -n "$((line_num + 4))p" "$file" 2>/dev/null || echo "")
-                
-                if [[ "$tags_line" =~ \*\*Tags:\*\* ]]; then
-                    print_color "$YELLOW" "  $tags_line"
-                fi
-                if [[ "$desc_line" =~ \*\*Description:\*\* ]]; then
-                    echo "  $desc_line"
-                fi
-                
-                # Show matching lines with context
-                echo ""
-                print_color "$MAGENTA" "  Matching content:"
-                local matching_lines=$(echo "$prompt_section" | grep $grep_options -C 1 "$grep_pattern" 2>/dev/null || true)
-                if [[ -n "$matching_lines" ]]; then
-                    echo "$matching_lines" | sed 's/^/    /'
-                fi
-            fi
-            
-            echo ""
+            # Add this result to global arrays
+            add_search_results "$prompt_title" "$file" "$line_num"
         fi
-    done <<< "$prompt_lines"
+    done <<< "$prompt_lines_raw"
+}
+
+# Function to display search results summary
+display_search_summary() {
+    local total_results=$1
     
-    return $found_results
+    if [[ $total_results -eq 0 ]]; then
+        print_color "$YELLOW" "No results found"
+        return
+    fi
+    
+    print_color "$GREEN" "Found $total_results result(s):"
+    echo ""
+    
+    # Display detailed information for each result
+    for i in "${!SEARCH_RESULTS_TITLES[@]}"; do
+        local category=$(basename "${SEARCH_RESULTS_FILES[$i]}" .md)
+        local title="${SEARCH_RESULTS_TITLES[$i]}"
+        local file="${SEARCH_RESULTS_FILES[$i]}"
+        local line_num="${SEARCH_RESULTS_LINES[$i]}"
+        
+        # Get additional details for this prompt
+        local next_prompt_line=$((line_num + 100))
+        local prompt_section=$(sed -n "${line_num},${next_prompt_line}p" "$file")
+        
+        # Display result number and title
+        printf "%2d. %s\n" "$((i + 1))" "$title"
+        print_color "$CYAN" "   📁 Category: $category"
+        
+        # Show tags if available
+        local tags_line=$(echo "$prompt_section" | grep -m 1 "^\*\*Tags:\*\*" || echo "")
+        if [[ -n "$tags_line" ]]; then
+            print_color "$YELLOW" "   🏷️  $tags_line"
+        fi
+        
+        # Show description if available
+        local desc_line=$(echo "$prompt_section" | grep -m 1 "^\*\*Description:\*\*" || echo "")
+        if [[ -n "$desc_line" ]]; then
+            # Remove the **Description:** prefix and show the actual description
+            local description=$(echo "$desc_line" | sed 's/^\*\*Description:\*\* //')
+            print_color "$MAGENTA" "   📝 $description"
+        fi
+        
+        echo ""
+    done
+    
+    # Ask user to select one for details
+    echo "----------------------------------------"
+    print_color "$BLUE" "Enter a number (1-$total_results) to view full prompt, or press Enter to skip: "
+    print_color "$CYAN" "Type 'm' to go back to search options menu"
+    echo ""
+}
+
+# Function to show prompt details
+show_prompt_details() {
+    local selection=$1
+    
+    if [[ ! "$selection" =~ ^[0-9]+$ ]] || [[ $selection -lt 1 ]] || [[ $selection -gt ${#SEARCH_RESULTS_TITLES[@]} ]]; then
+        print_color "$RED" "Invalid selection. Please enter a number between 1 and ${#SEARCH_RESULTS_TITLES[@]}"
+        return 0 # Indicate failure
+    fi
+    
+    local index=$((selection - 1))
+    local file="${SEARCH_RESULTS_FILES[$index]}"
+    local line_num="${SEARCH_RESULTS_LINES[$index]}"
+    local title="${SEARCH_RESULTS_TITLES[$index]}"
+    
+    echo ""
+    print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    print_color "$BOLD$GREEN" "📋 Prompt Details:"
+    echo ""
+    
+    # Display the full prompt details
+    print_color "$CYAN" "$title"
+    echo ""
+    
+    # Look ahead 100 lines for content
+    local next_prompt_line=$((line_num + 100))
+    local prompt_section=$(sed -n "${line_num},${next_prompt_line}p" "$file")
+    
+    # Show tags if available
+    local tags_line=$(echo "$prompt_section" | grep -m 1 "^\*\*Tags:\*\*" || echo "")
+    if [[ -n "$tags_line" ]]; then
+        print_color "$YELLOW" "$tags_line"
+        echo ""
+    fi
+    
+    # Show description if available
+    local desc_line=$(echo "$prompt_section" | grep -m 1 "^\*\*Description:\*\*" || echo "")
+    if [[ -n "$desc_line" ]]; then
+        echo "$desc_line"
+        echo ""
+    fi
+    
+    # Show the full prompt content
+    local prompt_content=$(echo "$prompt_section" | sed -n '/```/,/```/p' | sed '1d' | sed '$d')
+    if [[ -n "$prompt_content" ]]; then
+        print_color "$MAGENTA" "**Prompt:**"
+        echo ""
+        echo "$prompt_content"
+        echo ""
+    fi
+    
+    print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    
+    # Show action menu
+    show_prompt_action_menu "$prompt_content"
+    return 0 # Indicate success
+}
+
+# Function to show prompt action menu
+show_prompt_action_menu() {
+    local prompt_content="$1"
+    
+    while true; do
+        echo ""
+        print_color "$BOLD$CYAN" "📋 What would you like to do with this prompt?"
+        echo ""
+        print_color "$GREEN" "  1. 📋 Copy prompt to clipboard"
+        print_color "$GREEN" "  2. 🌍 Copy specific language version"
+        print_color "$GREEN" "  3. ↩️  Back to search results"
+        echo ""
+        print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+        
+        echo -n "Select option (1-3): "
+        read -r action_choice </dev/tty
+        
+        case $action_choice in
+            1)
+                copy_prompt_to_clipboard "$prompt_content"
+                ;;
+            2)
+                copy_language_version "$prompt_content"
+                ;;
+            3)
+                print_color "$BLUE" "Returning to search results..."
+                return 0
+                ;;
+            *)
+                print_color "$RED" "Invalid choice. Please select 1-3."
+                ;;
+        esac
+    done
+}
+
+# Function to copy prompt to clipboard
+copy_prompt_to_clipboard() {
+    local prompt_content="$1"
+    
+    # Check for clipboard command
+    local clipboard_cmd=""
+    if command -v pbcopy >/dev/null 2>&1; then
+        clipboard_cmd="pbcopy"  # macOS
+    elif command -v xclip >/dev/null 2>&1; then
+        clipboard_cmd="xclip -selection clipboard"  # Linux with xclip
+    elif command -v xsel >/dev/null 2>&1; then
+        clipboard_cmd="xsel --clipboard --input"  # Linux with xsel
+    elif command -v clip.exe >/dev/null 2>&1; then
+        clipboard_cmd="clip.exe"  # Windows with clip.exe
+    fi
+    
+    if [[ -z "$clipboard_cmd" ]]; then
+        print_color "$RED" "❌ Clipboard command not found. Please install one of:"
+        echo "  - macOS: pbcopy (built-in)"
+        echo "  - Linux: xclip or xsel"
+        echo "  - Windows: clip.exe (built-in)"
+        echo ""
+        print_color "$YELLOW" "Prompt content (copy manually):"
+        echo "----------------------------------------"
+        echo "$prompt_content"
+        echo "----------------------------------------"
+        return
+    fi
+    
+    # Copy to clipboard
+    echo "$prompt_content" | eval "$clipboard_cmd"
+    if [[ $? -eq 0 ]]; then
+        print_color "$GREEN" "✅ Prompt copied to clipboard successfully!"
+    else
+        print_color "$RED" "❌ Failed to copy to clipboard"
+        echo ""
+        print_color "$YELLOW" "Prompt content (copy manually):"
+        echo "----------------------------------------"
+        echo "$prompt_content"
+        echo "----------------------------------------"
+    fi
+}
+
+# Function to copy specific language version
+copy_language_version() {
+    local prompt_content="$1"
+    
+    echo ""
+    print_color "$BOLD$CYAN" "🌍 Select Language Version:"
+    echo ""
+    print_color "$GREEN" "  1. 🇺🇸 English (EN)"
+    print_color "$GREEN" "  2. 🇯🇵 Japanese (JP)"
+    print_color "$GREEN" "  3. 🇨🇳 Chinese (ZH)"
+    print_color "$GREEN" "  4. 🇩🇪 German (DE)"
+    print_color "$GREEN" "  5. 🇫🇷 French (FR)"
+    print_color "$GREEN" "  6. 🇪🇸 Spanish (ES)"
+    print_color "$GREEN" "  7. 🇮🇹 Italian (IT)"
+    print_color "$GREEN" "  8. 🇵🇹 Portuguese (PT)"
+    print_color "$GREEN" "  9. 🇷🇺 Russian (RU)"
+    print_color "$GREEN" "  10. 🇸🇦 Arabic (AR)"
+    print_color "$GREEN" "  11. 🇰🇷 Korean (KO)"
+    print_color "$GREEN" "  12. 🇮🇳 Hindi (HI)"
+    print_color "$GREEN" "  13. ↩️  Back to prompt actions"
+    echo ""
+    
+    echo -n "Select language (1-13): "
+    read -r lang_choice </dev/tty
+    
+    case $lang_choice in
+        1) copy_language_prompt "$prompt_content" "EN" ;;
+        2) copy_language_prompt "$prompt_content" "JP" ;;
+        3) copy_language_prompt "$prompt_content" "ZH" ;;
+        4) copy_language_prompt "$prompt_content" "DE" ;;
+        5) copy_language_prompt "$prompt_content" "FR" ;;
+        6) copy_language_prompt "$prompt_content" "ES" ;;
+        7) copy_language_prompt "$prompt_content" "IT" ;;
+        8) copy_language_prompt "$prompt_content" "PT" ;;
+        9) copy_language_prompt "$prompt_content" "RU" ;;
+        10) copy_language_prompt "$prompt_content" "AR" ;;
+        11) copy_language_prompt "$prompt_content" "KO" ;;
+        12) copy_language_prompt "$prompt_content" "HI" ;;
+        13|*) 
+            print_color "$BLUE" "Returning to prompt actions..."
+            show_prompt_action_menu "$prompt_content"
+            return
+            ;;
+    esac
+}
+
+# Function to copy prompt in specific language
+copy_language_prompt() {
+    local prompt_content="$1"
+    local language="$2"
+    
+    print_color "$BLUE" "🌍 Looking for $language version of this prompt..."
+    
+    # For now, we'll just copy the English version since other languages may not have this prompt yet
+    # In the future, this could search for translated versions
+    if [[ "$language" == "EN" ]]; then
+        copy_prompt_to_clipboard "$prompt_content"
+    else
+        print_color "$YELLOW" "⚠️  $language version not yet available."
+        print_color "$CYAN" "Copying English version instead. Translation feature coming soon!"
+        copy_prompt_to_clipboard "$prompt_content"
+    fi
 }
 
 # Function for interactive search
 interactive_search() {
     print_color "$BLUE" "🔍 Interactive Prompt Search"
     echo ""
+    print_color "$CYAN" "Type 'quit' or 'q' to exit, 'help' for tips"
+    echo ""
     
     while true; do
-        echo -n "Enter search keywords (or 'quit' to exit): "
+        echo -n "Enter search keywords: "
         read -r keywords </dev/tty
         
         if [[ "$keywords" == "quit" ]] || [[ "$keywords" == "q" ]]; then
             print_color "$GREEN" "Goodbye!"
             break
+        fi
+        
+        if [[ "$keywords" == "help" ]]; then
+            print_color "$YELLOW" "Search Tips:"
+            print_color "$CYAN" "  • Use multiple words: 'machine learning neural'"
+            print_color "$CYAN" "  • Be specific: 'data analysis' instead of just 'data'"
+            print_color "$CYAN" "  • Try different terms: 'AI' or 'artificial intelligence'"
+            echo ""
+            continue
         fi
         
         if [[ -z "$keywords" ]]; then
@@ -339,141 +422,190 @@ interactive_search() {
         fi
         
         echo ""
-        print_color "$BLUE" "Searching for: '$keywords'"
+        print_color "$BLUE" "🔍 Searching for: '$keywords'"
         echo ""
         
         # Convert keywords to array
         read -ra search_terms <<< "$keywords"
         
         # Perform search
-        local total_results=0
+        clear_search_results
         for file in "$PROMPTS_DIR"/*.md; do
             if [[ -f "$file" ]]; then
                 search_in_file "$file" "${search_terms[@]}"
-                total_results=$((total_results + $?))
             fi
         done
         
-        if [[ $total_results -eq 0 ]]; then
-            print_color "$YELLOW" "No results found for '$keywords'"
+        local total_results=$SEARCH_RESULTS_COUNT
+        
+        display_search_summary "$total_results"
+        
+        read -r selection </dev/tty
+        
+        if [[ -z "$selection" ]]; then
+            print_color "$YELLOW" "Skipping prompt details."
+        elif [[ "$selection" == "m" ]] || [[ "$selection" == "M" ]]; then
+            print_color "$BLUE" "Returning to search options menu..."
+            return 0
+        elif [[ "$selection" =~ ^[0-9]+$ ]] && [[ $selection -ge 1 ]] && [[ $selection -le $total_results ]]; then
+            show_prompt_details "$selection"
+            # If user chose to go back to search results, redisplay them
+            if [[ $? -eq 0 ]]; then
+                echo ""
+                display_search_summary "$total_results"
+                read -r selection2 </dev/tty
+                
+                if [[ -z "$selection2" ]]; then
+                    print_color "$YELLOW" "Skipping prompt details."
+                elif [[ "$selection2" == "m" ]] || [[ "$selection2" == "M" ]]; then
+                    print_color "$BLUE" "Returning to search options menu..."
+                    return 0
+                elif [[ "$selection2" =~ ^[0-9]+$ ]] && [[ $selection2 -ge 1 ]] && [[ $selection2 -le $total_results ]]; then
+                    show_prompt_details "$selection2"
+                else
+                    print_color "$RED" "Invalid selection. Skipping prompt details."
+                fi
+            fi
         else
-            print_color "$GREEN" "Found $total_results result(s)"
+            print_color "$RED" "Invalid selection. Skipping prompt details."
         fi
         
         echo ""
-        echo "----------------------------------------"
+    done
+}
+
+# Function to show search options menu
+show_search_options_menu() {
+    while true; do
+        print_header
+        local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+        
+        print_color "$BOLD$CYAN" "$(get_string "SEARCH_MENU_TITLE" "$interface_lang")"
         echo ""
-    done
-}
-
-# Function to search by tag
-search_by_tag() {
-    local tag="$1"
-    local total_results=0
-    
-    print_color "$BLUE" "🏷️  Searching by tag: '$tag'"
-    echo ""
-    
-    for file in "$PROMPTS_DIR"/*.md; do
-        if [[ -f "$file" ]]; then
-            local category=$(basename "$file" .md)
-            
-            # Search for the tag in **Tags:** lines
-            local tag_matches=$(grep -n "**Tags:**.*$tag" "$file" 2>/dev/null || true)
-            
-            if [[ -n "$tag_matches" ]]; then
-                while IFS= read -r tag_line; do
-                    local line_num=$(echo "$tag_line" | cut -d: -f1)
-                    # Find the corresponding prompt title (should be 2 lines above)
-                    local title_line_num=$((line_num - 2))
-                    local title=$(sed -n "${title_line_num}p" "$file" 2>/dev/null || echo "")
-                    
-                    if [[ "$title" =~ ^### ]]; then
-                        ((total_results++))
-                        print_color "$GREEN" "📍 Found in $category:"
-                        print_color "$CYAN" "$title"
-                        print_color "$YELLOW" "  $(echo "$tag_line" | cut -d: -f2-)"
-                        
-                        if [[ "$VERBOSE" == "true" ]]; then
-                            local desc_line=$(sed -n "$((line_num + 2))p" "$file" 2>/dev/null || echo "")
-                            if [[ "$desc_line" =~ \*\*Description:\*\* ]]; then
-                                echo "  $desc_line"
-                            fi
-                        fi
-                        echo ""
-                    fi
-                done <<< "$tag_matches"
-            fi
-        fi
-    done
-    
-    if [[ $total_results -eq 0 ]]; then
-        print_color "$YELLOW" "No prompts found with tag '$tag'"
-    else
-        print_color "$GREEN" "Found $total_results result(s) with tag '$tag'"
-    fi
-}
-
-# Function to search by research area
-search_by_area() {
-    local area="$1"
-    local total_results=0
-    
-    print_color "$BLUE" "🔬 Searching by research area: '$area'"
-    echo ""
-    
-    for file in "$PROMPTS_DIR"/*.md; do
-        if [[ -f "$file" ]]; then
-            local category=$(basename "$file" .md)
-            
-            # Check if this area exists in the file's research areas section
-            local area_exists=$(sed -n '/## Research Areas/,/^## /p' "$file" | grep -i "- $area" 2>/dev/null || true)
-            
-            if [[ -n "$area_exists" ]]; then
-                print_color "$GREEN" "📂 Category: $category contains research area '$area'"
-                
-                # Find all prompts in this category
-                local prompt_lines=$(grep -n "^### [0-9]" "$file" 2>/dev/null || true)
-                local prompt_count=$(echo "$prompt_lines" | wc -l)
-                
-                if [[ $prompt_count -gt 0 ]]; then
-                    echo "  Found $prompt_count prompt(s) in this category:"
-                    
-                    if [[ "$VERBOSE" == "true" ]]; then
-                        while IFS= read -r prompt_line; do
-                            local title=$(echo "$prompt_line" | cut -d: -f2-)
-                            print_color "$CYAN" "    $title"
-                            ((total_results++))
-                        done <<< "$prompt_lines"
-                    else
-                        total_results=$((total_results + prompt_count))
-                    fi
-                fi
+        print_color "$GREEN" "🔍 Simple Search Options:"
+        echo ""
+        print_color "$YELLOW" "  1. Interactive Search (recommended)"
+        print_color "$YELLOW" "  2. Quick Keyword Search"
+        print_color "$YELLOW" "  3. Browse All Categories"
+        print_color "$YELLOW" "  4. Back to Main Menu"
+        echo ""
+        print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+        
+        echo -n "Select option (1-4): "
+        read -r search_choice </dev/tty
+        
+        case $search_choice in
+            1)
+                print_color "$BLUE" "🚀 Launching Interactive Search..."
                 echo ""
-            fi
+                interactive_search
+                ;;
+            2)
+                echo ""
+                echo -n "Enter keywords to search: "
+                read -r keywords </dev/tty
+                if [[ -n "$keywords" ]]; then
+                    echo ""
+                    print_color "$BLUE" "🔍 Searching for: $keywords"
+                    echo ""
+                    perform_search "$keywords"
+                fi
+                ;;
+            3)
+                echo ""
+                print_color "$BLUE" "📂 Listing all categories..."
+                echo ""
+                list_categories
+                echo ""
+                print_color "$BLUE" "Press Enter to return to search menu..."
+                read -r input </dev/tty
+                ;;
+            4|*)
+                print_color "$BLUE" "Returning to main menu..."
+                exit 0
+                ;;
+        esac
+    done
+}
+
+# Function to perform search
+perform_search() {
+    local keywords="$1"
+    local search_terms=("$@")
+    
+    # Search in all Prompts/EN files where the actual prompts are
+    clear_search_results
+    for file in "$PROMPTS_DIR"/*.md; do
+        if [[ -f "$file" ]]; then
+            search_in_file "$file" "${search_terms[@]}"
         fi
     done
     
+    local total_results=$SEARCH_RESULTS_COUNT
+    
     if [[ $total_results -eq 0 ]]; then
-        print_color "$YELLOW" "No prompts found in research area '$area'"
-    else
-        print_color "$GREEN" "Found $total_results result(s) in research area '$area'"
+        print_color "$YELLOW" "No results found for '$keywords'"
+        print_color "$CYAN" "Try different keywords or be more specific"
+        echo ""
+        print_color "$BLUE" "Press Enter to return to search menu..."
+        read -r input </dev/tty
+        return
     fi
+    
+    display_search_summary "$total_results"
+    
+    read -r selection </dev/tty
+    
+    if [[ -z "$selection" ]]; then
+        print_color "$YELLOW" "Skipping prompt details."
+    elif [[ "$selection" == "m" ]] || [[ "$selection" == "M" ]]; then
+        print_color "$BLUE" "Returning to search options menu..."
+        return
+    elif [[ "$selection" =~ ^[0-9]+$ ]] && [[ $selection -ge 1 ]] && [[ $selection -le $total_results ]]; then
+        show_prompt_details "$selection"
+        # If user chose to go back to search results, redisplay them
+        if [[ $? -eq 0 ]]; then
+            echo ""
+            display_search_summary "$total_results"
+            read -r selection2 </dev/tty
+            
+            if [[ -z "$selection2" ]]; then
+                print_color "$YELLOW" "Skipping prompt details."
+            elif [[ "$selection2" == "m" ]] || [[ "$selection2" == "M" ]]; then
+                print_color "$BLUE" "Returning to search options menu..."
+                return
+            elif [[ "$selection2" =~ ^[0-9]+$ ]] && [[ $selection2 -ge 1 ]] && [[ $selection2 -le $total_results ]]; then
+                show_prompt_details "$selection2"
+            else
+                print_color "$RED" "Invalid selection. Skipping prompt details."
+            fi
+        fi
+    else
+        print_color "$RED" "Invalid selection. Skipping prompt details."
+    fi
+}
+
+# Function to print header
+print_header() {
+    clear
+    print_color "$BOLD$BLUE" "╔══════════════════════════════════════════════════════════════╗"
+    print_color "$BOLD$BLUE" "║                                                              ║"
+    print_color "$BOLD$BLUE" "║           🎓 AWESOME ACADEMIC PROMPTS TOOLKIT 🎓            ║"
+    print_color "$BOLD$BLUE" "║                                                              ║"
+    print_color "$BOLD$BLUE" "║        Your Complete Academic AI Prompt Management          ║"
+    print_color "$BOLD$BLUE" "║                     Command Center                           ║"
+    print_color "$BOLD$BLUE" "║                                                              ║"
+    print_color "$BOLD$BLUE" "╚══════════════════════════════════════════════════════════════╝"
+    echo ""
 }
 
 # Main function
 main() {
     # Default options
-    local CATEGORY=""
-    local TAG=""
-    local AREA=""
     local INTERACTIVE=false
     local LIST_CATEGORIES=false
-    VERBOSE=false
-    CASE_SENSITIVE=false
-    EXACT_MATCH=false
-    local COPY_PROMPT_NUM=""
-    local LANGUAGE="EN"
+    local CATEGORY=""
     
     # Parse command line arguments
     while [[ $# -gt 0 ]]; do
@@ -481,18 +613,6 @@ main() {
             -h|--help)
                 show_usage
                 exit 0
-                ;;
-            -c|--category)
-                CATEGORY="$2"
-                shift 2
-                ;;
-            -t|--tag)
-                TAG="$2"
-                shift 2
-                ;;
-            -a|--area)
-                AREA="$2"
-                shift 2
                 ;;
             -i|--interactive)
                 INTERACTIVE=true
@@ -502,24 +622,8 @@ main() {
                 LIST_CATEGORIES=true
                 shift
                 ;;
-            -v|--verbose)
-                VERBOSE=true
-                shift
-                ;;
-            --case-sensitive)
-                CASE_SENSITIVE=true
-                shift
-                ;;
-            --exact-match)
-                EXACT_MATCH=true
-                shift
-                ;;
-            --copy)
-                COPY_PROMPT_NUM="$2"
-                shift 2
-                ;;
-            --lang)
-                LANGUAGE="$2"
+            -c|--category)
+                CATEGORY="$2"
                 shift 2
                 ;;
             -*)
@@ -536,6 +640,7 @@ main() {
     # Check if prompts directory exists
     if [[ ! -d "$PROMPTS_DIR" ]]; then
         print_color "$RED" "Error: Prompts directory not found at $PROMPTS_DIR"
+        print_color "$YELLOW" "Make sure you're running this from the correct directory"
         exit 1
     fi
     
@@ -550,69 +655,60 @@ main() {
         exit 0
     fi
     
-    # Handle tag search
-    if [[ -n "$TAG" ]]; then
-        search_by_tag "$TAG"
-        exit 0
-    fi
-    
-    # Handle area search
-    if [[ -n "$AREA" ]]; then
-        search_by_area "$AREA"
-        exit 0
-    fi
-    
-    # Handle copy prompt
-    if [[ -n "$COPY_PROMPT_NUM" ]]; then
-        copy_prompt_to_clipboard "$COPY_PROMPT_NUM" "$LANGUAGE" "$CATEGORY"
-        exit 0
+    # Handle category-specific search
+    if [[ -n "$CATEGORY" ]]; then
+        local category_file="$PROMPTS_DIR/$CATEGORY.md"
+        if [[ ! -f "$category_file" ]]; then
+            print_color "$RED" "Error: Category file not found: $category_file"
+            print_color "$YELLOW" "Use -l to list available categories"
+            exit 1
+        fi
+        
+        if [[ $# -eq 0 ]]; then
+            print_color "$YELLOW" "No search terms provided for category search"
+            print_color "$CYAN" "Usage: $0 -c $CATEGORY <keywords>"
+            exit 1
+        fi
+        
+        local search_terms=("$@")
+        print_color "$BLUE" "🔍 Searching in category '$CATEGORY' for: $(IFS=' '; echo "${search_terms[*]}")"
+        echo ""
+        
+        clear_search_results
+        search_in_file "$category_file" "${search_terms[@]}"
+        local total_results=$SEARCH_RESULTS_COUNT
+        
+        if [[ $total_results -eq 0 ]]; then
+            print_color "$YELLOW" "No results found in category '$CATEGORY'"
+            exit 0
+        fi
+        
+        display_search_summary "$total_results"
+        
+        read -r selection </dev/tty
+        
+        if [[ -z "$selection" ]]; then
+            print_color "$YELLOW" "Skipping prompt details."
+        elif [[ "$selection" == "m" ]] || [[ "$selection" == "M" ]]; then
+            print_color "$BLUE" "Returning to search options menu..."
+            show_search_options_menu
+        elif [[ "$selection" =~ ^[0-9]+$ ]] && [[ $selection -ge 1 ]] && [[ $selection -le $total_results ]]; then
+            show_prompt_details "$selection"
+        else
+            print_color "$RED" "Invalid selection. Skipping prompt details."
+        fi
+        return 0
     fi
     
     # Regular keyword search
     if [[ $# -eq 0 ]]; then
-        print_color "$YELLOW" "No search terms provided. Use -h for help or -i for interactive mode."
-        exit 1
+        # Show search options menu when no arguments provided
+        show_search_options_menu
+        exit 0
     fi
     
     local search_terms=("$@")
-    local total_results=0
-    
-    print_color "$BLUE" "🔍 Searching for: $(IFS=' '; echo "${search_terms[*]}")"
-    if [[ "$EXACT_MATCH" == "true" ]]; then
-        print_color "$YELLOW" "Using exact phrase matching"
-    fi
-    if [[ "$CASE_SENSITIVE" == "true" ]]; then
-        print_color "$YELLOW" "Using case-sensitive search"
-    fi
-    echo ""
-    
-    # Search in specific category or all categories
-    if [[ -n "$CATEGORY" ]]; then
-        local category_file="$PROMPTS_DIR/$CATEGORY.md"
-        if [[ -f "$category_file" ]]; then
-            search_in_file "$category_file" "${search_terms[@]}"
-            total_results=$?
-        else
-            print_color "$RED" "Category file not found: $category_file"
-            exit 1
-        fi
-    else
-        # Search in all categories
-        for file in "$PROMPTS_DIR"/*.md; do
-            if [[ -f "$file" ]]; then
-                search_in_file "$file" "${search_terms[@]}"
-                total_results=$((total_results + $?))
-            fi
-        done
-    fi
-    
-    # Summary
-    echo "----------------------------------------"
-    if [[ $total_results -eq 0 ]]; then
-        print_color "$YELLOW" "No results found"
-    else
-        print_color "$GREEN" "Total results found: $total_results"
-    fi
+    perform_search "${search_terms[@]}"
 }
 
 # Run main function

@@ -714,25 +714,24 @@ main() {
                 run_tool "scripts/add_prompt.sh" "Add Prompt Tool"
                 ;;
             2)
-                # Show search submenu
+                # Search options menu
                 while true; do
                     print_header
                     local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
                     
                     print_color "$BOLD$CYAN" "$(get_string "SEARCH_MENU_TITLE" "$interface_lang")"
                     echo ""
-                    print_color "$GREEN" "  1. $(get_string "INTERACTIVE_SEARCH" "$interface_lang")"
-                    print_color "$GREEN" "  2. $(get_string "QUICK_KEYWORD_SEARCH" "$interface_lang")"
-                    print_color "$GREEN" "  3. $(get_string "BROWSE_BY_CATEGORY" "$interface_lang")"
-                    print_color "$GREEN" "  4. $(get_string "SEARCH_BY_TAG" "$interface_lang")"
-                    print_color "$GREEN" "  5. $(get_string "LIST_ALL_CATEGORIES" "$interface_lang")"
-                    print_color "$GREEN" "  6. $(get_string "COPY_PROMPT_CLIPBOARD" "$interface_lang")"
-                    print_color "$GREEN" "  7. $(get_string "BACK_TO_MENU" "$interface_lang")"
+                    print_color "$GREEN" "🔍 Simple Search Options:"
+                    echo ""
+                    print_color "$YELLOW" "  1. Interactive Search (recommended)"
+                    print_color "$YELLOW" "  2. Quick Keyword Search"
+                    print_color "$YELLOW" "  3. Browse All Categories"
+                    print_color "$YELLOW" "  4. Back to Main Menu"
                     echo ""
                     print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
                     echo ""
                     
-                    echo -n "$(get_string "SELECT_OPTION" "$interface_lang") (1-7) or type 'q' to return: "
+                    echo -n "Select option (1-4): "
                     read -r search_choice </dev/tty
                     
                     case $search_choice in
@@ -742,113 +741,35 @@ main() {
                             "$SCRIPT_DIR/scripts/search_prompts.sh" -i
                             echo ""
                             print_color "$GREEN" "✅ Interactive Search completed."
-                            print_color "$BLUE" "Press Enter or type 'q' to return to search menu..."
+                            print_color "$BLUE" "Press Enter to return to search menu..."
                             read -r input </dev/tty
-                            if [[ "$input" == "q" ]] || [[ "$input" == "Q" ]]; then
-                                break
-                            fi
                             ;;
                         2)
                             echo ""
-                            echo -n "Enter keywords to search (or 'back' to return): "
+                            echo -n "Enter keywords to search: "
                             read -r keywords </dev/tty
-                            if [[ "$keywords" == "back" ]]; then
-                                continue
-                            elif [[ -n "$keywords" ]]; then
+                            if [[ -n "$keywords" ]]; then
+                                echo ""
+                                print_color "$BLUE" "🔍 Searching for: $keywords"
+                                echo ""
                                 "$SCRIPT_DIR/scripts/search_prompts.sh" $keywords
                                 echo ""
-                                print_color "$BLUE" "Press Enter or type 'q' to return to search menu..."
+                                print_color "$BLUE" "Press Enter to return to search menu..."
                                 read -r input </dev/tty
-                                if [[ "$input" == "q" ]] || [[ "$input" == "Q" ]]; then
-                                    break
-                                fi
                             fi
                             ;;
-                                                3)
+                        3)
                             echo ""
-                            echo -n "Enter category name (or 'back' to return): "
-                            read -r category </dev/tty
-                            if [[ "$category" == "back" ]]; then
-                                continue
-                            elif [[ -n "$category" ]]; then
-                                echo -n "Enter search keywords (optional, or 'back' to return): "
-                                read -r keywords </dev/tty
-                            if [[ "$keywords" == "back" ]]; then
-                                continue
-                            elif [[ -n "$keywords" ]]; then
-                                "$SCRIPT_DIR/scripts/search_prompts.sh" -c "$category" $keywords
-                            else
-                                "$SCRIPT_DIR/scripts/search_prompts.sh" -c "$category" ""
-                            fi
+                            print_color "$BLUE" "📂 Listing all categories..."
                             echo ""
-                            print_color "$BLUE" "Press Enter or type 'q' to return to search menu..."
-                            read -r input </dev/tty
-                            if [[ "$input" == "q" ]] || [[ "$input" == "Q" ]]; then
-                                break
-                            fi
-                            fi
-                            ;;
-                        4)
-                            echo ""
-                            echo -n "Enter tag to search (or 'back' to return): "
-                            read -r tag </dev/tty
-                            if [[ "$tag" == "back" ]]; then
-                                continue
-                            elif [[ -n "$tag" ]]; then
-                                "$SCRIPT_DIR/scripts/search_prompts.sh" -t "$tag"
-                                echo ""
-                                print_color "$BLUE" "Press Enter or type 'q' to return to search menu..."
-                                read -r input </dev/tty
-                                if [[ "$input" == "q" ]] || [[ "$input" == "Q" ]]; then
-                                    break
-                                fi
-                            fi
-                            ;;
-                        5)
                             "$SCRIPT_DIR/scripts/search_prompts.sh" -l
                             echo ""
-                            print_color "$BLUE" "Press Enter or type 'q' to return to search menu..."
+                            print_color "$BLUE" "Press Enter to return to search menu..."
                             read -r input </dev/tty
-                            if [[ "$input" == "q" ]] || [[ "$input" == "Q" ]]; then
-                                break
-                            fi
                             ;;
-                        6)
-                            echo ""
-                            print_color "$BLUE" "📋 Copy Prompt to Clipboard"
-                            echo ""
-                            echo -n "Enter prompt number to copy (or 'back' to return): "
-                            read -r prompt_num </dev/tty
-                            if [[ "$prompt_num" == "back" ]]; then
-                                continue
-                            elif [[ -n "$prompt_num" ]] && [[ "$prompt_num" =~ ^[0-9]+$ ]]; then
-                                echo -n "Enter language (EN, ZH, JP, etc.) or press Enter for English: "
-                                read -r language </dev/tty
-                                if [[ "$language" == "back" ]]; then
-                                    continue
-                                elif [[ -z "$language" ]]; then
-                                    language="EN"
-                                fi
-                                echo ""
-                                print_color "$BLUE" "🚀 Copying prompt $prompt_num to clipboard..."
-                                "$SCRIPT_DIR/scripts/search_prompts.sh" --copy "$prompt_num" --lang "$language"
-                                echo ""
-                                print_color "$BLUE" "Press Enter or type 'q' to return to search menu..."
-                                read -r input </dev/tty
-                                if [[ "$input" == "q" ]] || [[ "$input" == "Q" ]]; then
-                                    break
-                                fi
-                            else
-                                print_color "$RED" "Invalid prompt number. Please enter a valid number."
-                                sleep 1
-                            fi
-                            ;;
-                        7|q|Q|"")
+                        4|*)
+                            # Return to main menu
                             break
-                            ;;
-                        *)
-                            print_color "$RED" "Invalid choice. Please select 1-7 or type 'q' to return."
-                            sleep 1
                             ;;
                     esac
                 done

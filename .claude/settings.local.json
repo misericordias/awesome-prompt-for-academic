@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "Bash(source:*)",
+      "Bash(get_string \"EDIT_SETTINGS_TITLE\" \"ZH\")",
+      "Bash(get_string \"INTERFACE_LANG_SELECTION\" \"ZH\")",
+      "Bash(get_string \"CURRENT_SETTINGS\" \"ZH\")"
+    ],
+    "deny": []
+  }
+}
