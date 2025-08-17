@@ -258,22 +258,12 @@ get_prompt_categories() {
     sed -n '/## Prompt Categories/,/^## /p' "$file" | grep '^- ' | sed 's/^- //'
 }
 
-# Function to get next prompt number
+# Function to get next prompt number (deprecated - no longer numbering prompts)
+# Keeping function for backward compatibility but not using numbering
 get_next_number() {
     local file="$1"
-    local last_number=0
-    
-    # Find the highest existing number
-    while IFS= read -r line; do
-        if [[ $line =~ ^###[[:space:]]+([0-9]+)\. ]]; then
-            local num=${BASH_REMATCH[1]}
-            if [[ $num -gt $last_number ]]; then
-                last_number=$num
-            fi
-        fi
-    done < "$file"
-    
-    echo $((last_number + 1))
+    # No longer numbering prompts, return empty
+    echo ""
 }
 
 # Function to validate input
@@ -447,14 +437,11 @@ main() {
         fi
     fi
     
-    # Get next number
-    next_number=$(get_next_number "$selected_file")
-    
     # Preview
     echo ""
     print_color "$BLUE" "📋 Preview:"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "### $next_number. $title"
+    echo "### $title"
     echo ""
     echo "**Tags:** \`$research_area\` | \`$prompt_category\`"
     echo ""
@@ -479,7 +466,7 @@ main() {
     # Add to file
     {
         echo ""
-        echo "### $next_number. $title"
+        echo "### $title"
         echo ""
         echo "**Tags:** \`$research_area\` | \`$prompt_category\`"
         echo ""

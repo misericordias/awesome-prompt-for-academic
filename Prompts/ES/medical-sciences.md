@@ -24,7 +24,7 @@ Colección de prompts increíbles para el trabajo académico en ciencias médica
 - Evaluación de Salud
 - Educación Médica
 
-### 1. Comunicador de Investigación Médica Científica
+### Comunicador de Investigación Médica Científica
 
 **Tags:** `Investigación Médica` | `Comunicación de Investigación`
 
@@ -74,7 +74,7 @@ Consideraciones críticas:
 </userExamples>
 ```
 
-### 2. Formular una pregunta de investigación clínica
+### Formular una pregunta de investigación clínica
 
 **Tags:** `Investigación Biomédica` | `Protocolos de Investigación`
 
@@ -85,7 +85,7 @@ Consideraciones críticas:
 Defina lo que se sabe sobre la condición médica/intervención, identifique la incertidumbre clave en el conocimiento actual y establezca la pregunta de investigación específica que aborda este estudio.
 ```
 
-### 3. Describir el diseño del estudio y los criterios de participación
+### Describir el diseño del estudio y los criterios de participación
 
 **Tags:** `Epidemiología` | `Protocolos de Investigación`
 

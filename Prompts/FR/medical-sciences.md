@@ -24,7 +24,7 @@ Collection d'invites formidables pour le travail académique en sciences médica
 - Évaluation de la Santé
 - Éducation Médicale
 
-### 1. Communicateur de la recherche médicale scientifique
+### Communicateur de la recherche médicale scientifique
 
 **Tags:** `Recherche médicale` | `Communication de la recherche`
 
@@ -74,7 +74,7 @@ Considérations critiques:
 </userExamples>
 ```
 
-### 2. Formuler une question de recherche clinique
+### Formuler une question de recherche clinique
 
 **Tags:** `Recherche Biomédicale` | `Protocoles de Recherche`
 
@@ -85,7 +85,7 @@ Considérations critiques:
 Définissez ce qui est connu sur la condition médicale/intervention, identifiez l'incertitude clé dans les connaissances actuelles et énoncez la question de recherche spécifique à laquelle cette étude répond.
 ```
 
-### 3. Décrire le plan d'étude et les critères de participation
+### Décrire le plan d'étude et les critères de participation
 
 **Tags:** `Épidémiologie` | `Protocoles de Recherche`
 

@@ -146,8 +146,8 @@ show_statistics() {
         
         # Count prompts
         local prompt_count=0
-        if grep -q "^### [0-9]" "$file" 2>/dev/null; then
-            prompt_count=$(grep -c "^### [0-9]" "$file" 2>/dev/null)
+        if grep -q "^### " "$file" 2>/dev/null; then
+            prompt_count=$(grep -c "^### " "$file" 2>/dev/null)
         fi
         
         # Count research areas

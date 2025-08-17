@@ -24,7 +24,7 @@ Sammlung fantastischer Prompts für medizinwissenschaftliche Arbeit im akademisc
 - Gesundheitsbewertung
 - Medizinische Ausbildung
 
-### 1. Wissenschaftlicher medizinischer Forschungs-Kommunikator
+### Wissenschaftlicher medizinischer Forschungs-Kommunikator
 
 **Tags:** `Medizinische Forschung` | `Forschungskommunikation`
 
@@ -74,7 +74,7 @@ Kritische Überlegungen:
 </userExamples>
 ```
 
-### 2. Eine klinische Forschungsfrage formulieren
+### Eine klinische Forschungsfrage formulieren
 
 **Tags:** `Biomedizinische Forschung` | `Forschungsprotokolle`
 
@@ -85,7 +85,7 @@ Kritische Überlegungen:
 Definieren Sie, was über einen medizinischen Zustand/eine Intervention bekannt ist, identifizieren Sie die wesentliche Unsicherheit im aktuellen Wissen und geben Sie die spezifische Forschungsfrage an, die diese Studie behandelt.
 ```
 
-### 3. Studiendesign und Teilnahmekriterien skizzieren
+### Studiendesign und Teilnahmekriterien skizzieren
 
 **Tags:** `Epidemiologie` | `Forschungsprotokolle`
 

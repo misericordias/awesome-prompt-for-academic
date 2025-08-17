@@ -332,7 +332,7 @@ search_in_file() {
     fi
     
     # Search for prompts (lines starting with ###)
-    local prompt_lines_raw=$(grep -n "^### [0-9]" "$file" 2>/dev/null || true)
+    local prompt_lines_raw=$(grep -n "^### " "$file" 2>/dev/null || true)
     
     if [[ -z "$prompt_lines_raw" ]]; then
         return 0
@@ -614,6 +614,8 @@ copy_language_prompt() {
         local title="${SEARCH_RESULTS_TITLES[0]}"
         if [[ "$title" =~ ^###\ ([0-9]+)\. ]]; then
             current_prompt_number="${BASH_REMATCH[1]}"
+        else
+            current_prompt_number=""
         fi
         
         # Get category from the file path

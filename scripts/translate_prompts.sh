@@ -119,7 +119,7 @@ count_prompts() {
             local total_prompts=0
             for file in "$lang_dir"/*.md; do
                 if [[ -f "$file" ]]; then
-                    local prompt_count=$(grep -c "^### [0-9]" "$file" 2>/dev/null || echo "0")
+                    local prompt_count=$(grep -c "^### " "$file" 2>/dev/null || echo "0")
                     if [[ "$prompt_count" =~ ^[0-9]+$ ]]; then
                         total_prompts=$((total_prompts + prompt_count))
                     fi

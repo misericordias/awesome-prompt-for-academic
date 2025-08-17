@@ -25,7 +25,7 @@ Collection of awesome prompts for medical sciences academic work.
 - Medical Education
 - Research Communication
 
-### 1. Scientific Medical Research Communicator
+### Scientific Medical Research Communicator
 
 **Tags:** `Medical Research` | `Research Communication`
 
@@ -75,7 +75,7 @@ Critical Considerations:
 </userExamples>
 ```
 
-### 2. Formulate a Clinical Research Question
+### Formulate a Clinical Research Question
 
 **Tags:** `Biomedical Research` | `Research Protocols`
 
@@ -86,7 +86,7 @@ Critical Considerations:
 Define what is known about medical condition/intervention, identify the key uncertainty in current knowledge, and state the specific research question this study addresses
 ```
 
-### 3. Outline Study Design and Participant Criteria
+### Outline Study Design and Participant Criteria
 
 **Tags:** `Epidemiology` | `Research Protocols`
 

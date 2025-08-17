@@ -24,7 +24,7 @@ Raccolta di prompt fantastici per il lavoro accademico nelle scienze mediche.
 - Valutazione della Salute
 - Educazione Medica
 
-### 1. Comunicatore di ricerca medica scientifica
+### Comunicatore di ricerca medica scientifica
 
 **Tags:** `Ricerca medica` | `Comunicazione della ricerca`
 
@@ -74,7 +74,7 @@ Considerazioni critiche:
 </userExamples>
 ```
 
-### 2. Formulare una domanda di ricerca clinica
+### Formulare una domanda di ricerca clinica
 
 **Tags:** `Ricerca Biomedica` | `Protocolli di Ricerca`
 
@@ -85,7 +85,7 @@ Considerazioni critiche:
 Definire ciò che è noto sulla condizione medica/intervento, identificare l'incertezza chiave nella conoscenza attuale e indicare la domanda di ricerca specifica a cui questo studio si rivolge.
 ```
 
-### 3. Delineare il disegno dello studio e i criteri di partecipazione
+### Delineare il disegno dello studio e i criteri di partecipazione
 
 **Tags:** `Epidemiologia` | `Protocolli di Ricerca`
 

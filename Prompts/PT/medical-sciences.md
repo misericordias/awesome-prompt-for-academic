@@ -24,7 +24,7 @@ Coleção de prompts incríveis para trabalho acadêmico em ciências médicas.
 - Avaliação de Saúde
 - Educação Médica
 
-### 1. Comunicador de Pesquisa Médica Científica
+### Comunicador de Pesquisa Médica Científica
 
 **Tags:** `Pesquisa Médica` | `Comunicação de Pesquisa`
 
@@ -74,7 +74,7 @@ Considerações críticas:
 </userExamples>
 ```
 
-### 2. Formular uma questão de pesquisa clínica
+### Formular uma questão de pesquisa clínica
 
 **Tags:** `Pesquisa Biomédica` | `Protocolos de Pesquisa`
 
@@ -85,7 +85,7 @@ Considerações críticas:
 Defina o que é conhecido sobre a condição médica/intervenção, identifique a principal incerteza no conhecimento atual e declare a questão de pesquisa específica que este estudo aborda.
 ```
 
-### 3. Descrever o desenho do estudo e os critérios de participação
+### Descrever o desenho do estudo e os critérios de participação
 
 **Tags:** `Epidemiologia` | `Protocolos de Pesquisa`
 
