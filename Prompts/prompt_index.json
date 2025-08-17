@@ -1,0 +1,113 @@
+{
+    "version": "1.0",
+    "description": "Index mapping prompts across different languages by unique ID and position",
+    "categories": {
+        "general": {
+            "prompts": [
+                {
+                    "id": "general_001",
+                    "position": 1,
+                    "en_title": "Academic Research Question Generator",
+                    "description": "Generate focused research questions for academic papers and projects"
+                },
+                {
+                    "id": "general_002",
+                    "position": 2,
+                    "en_title": "Literature Review Synthesizer",
+                    "description": "Create comprehensive literature reviews by synthesizing multiple sources"
+                },
+                {
+                    "id": "general_003",
+                    "position": 3,
+                    "en_title": "Academic Writing Clarity Improver",
+                    "description": "Improve the clarity and readability of academic writing"
+                },
+                {
+                    "id": "general_004",
+                    "position": 4,
+                    "en_title": "Comprehensive Keyword and Synonym Generator for Literature Search",
+                    "description": "Generate comprehensive keywords and synonyms for literature search"
+                },
+                {
+                    "id": "general_005",
+                    "position": 5,
+                    "en_title": "Boolean Search String Formulation for Academic Databases",
+                    "description": "Formulate boolean search strings for academic databases"
+                },
+                {
+                    "id": "general_006",
+                    "position": 6,
+                    "en_title": "Top Academic Journal Identification",
+                    "description": "Identify top academic journals for publication"
+                },
+                {
+                    "id": "general_007",
+                    "position": 7,
+                    "en_title": "Seminal Author and Key Publication Finder",
+                    "description": "Find seminal authors and key publications in a field"
+                },
+                {
+                    "id": "general_008",
+                    "position": 8,
+                    "en_title": "Systematic Review Search Strategy Creator",
+                    "description": "Create search strategies for systematic reviews"
+                },
+                {
+                    "id": "general_009",
+                    "position": 9,
+                    "en_title": "Academic Article Summarizer and Analyzer",
+                    "description": "Summarize and analyze academic articles"
+                },
+                {
+                    "id": "general_010",
+                    "position": 10,
+                    "en_title": "Critical Peer Reviewer for Abstracts",
+                    "description": "Provide critical peer review for abstracts"
+                },
+                {
+                    "id": "general_011",
+                    "position": 11,
+                    "en_title": "Comparative Analysis of Theoretical Frameworks",
+                    "description": "Compare and analyze theoretical frameworks"
+                },
+                {
+                    "id": "general_012",
+                    "position": 12,
+                    "en_title": "Identify Point of Disagreement Between Authors",
+                    "description": "Identify points of disagreement between authors"
+                },
+                {
+                    "id": "general_013",
+                    "position": 13,
+                    "en_title": "Methodology Appropriateness Analysis",
+                    "description": "Analyze the appropriateness of research methodologies"
+                }
+            ]
+        },
+        "computer-science": {
+            "prompts": []
+        },
+        "medical-sciences": {
+            "prompts": [
+                {
+                    "id": "medical_001",
+                    "position": 1,
+                    "en_title": "Scientific Medical Research Communicator",
+                    "description": "Guide precise, evidence-based communication of medical research"
+                },
+                {
+                    "id": "medical_002",
+                    "position": 2,
+                    "en_title": "Formulate a Clinical Research Question",
+                    "description": "Formulate focused clinical research questions"
+                },
+                {
+                    "id": "medical_003",
+                    "position": 3,
+                    "en_title": "Outline Study Design and Participant Criteria",
+                    "description": "Outline study design and participant criteria"
+                }
+            ]
+        }
+    }
+}

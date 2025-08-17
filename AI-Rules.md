@@ -12,12 +12,11 @@ When a user provides a prompt body, you should:
 5. **Write a concise description** explaining the prompt's use case
 6. **Add the prompt** to the correct markdown file in the input language first
 7. **Translate and add** the prompt to all other language folders
-8. **Assign the next sequential number** within the chosen category
 
 ### Language Handling Rules:
 - **Primary Addition**: Always add to the folder matching the input language first
 - **Translation Requirement**: After adding to the primary language, translate and add to ALL other language folders
-- **Consistency**: Maintain the same category, tags, and numbering across all languages
+- **Consistency**: Maintain the same category and tags across all languages
 
 ## 📂 Available Categories
 
@@ -70,7 +69,7 @@ Select the most appropriate Prompt Category from the target category file. Examp
 When adding a prompt, use this exact format:
 
 ```markdown
-### [Number]. [Descriptive Title]
+### [Descriptive Title]
 
 **Tags:** `[Research Area]` | `[Prompt Category]`
 
@@ -81,6 +80,103 @@ When adding a prompt, use this exact format:
 [The actual prompt text goes here]
 ```
 ```
+
+## 📇 Prompt Index System
+
+The repository uses a position-based indexing system to enable cross-language prompt copying functionality. This system allows users to find the same prompt in different languages even when titles are translated.
+
+### Index File Location
+- **File**: `Prompts/prompt_index.json`
+- **Purpose**: Maps prompts across languages by unique ID and position within category files
+- **Format**: JSON structure with categories, prompt IDs, positions, and metadata
+
+### Index Structure
+```json
+{
+  "version": "1.0",
+  "description": "Index mapping prompts across different languages by unique ID and position",
+  "categories": {
+    "category-name": {
+      "prompts": [
+        {
+          "id": "category_001",
+          "position": 1,
+          "en_title": "English Title",
+          "description": "Brief description of the prompt's purpose"
+        }
+      ]
+    }
+  }
+}
+```
+
+### Index Maintenance Rules
+
+When adding a new prompt, you **MUST**:
+
+1. **Update the index file** (`Prompts/prompt_index.json`)
+2. **Assign a unique ID** following the pattern: `{category}_{number}` (e.g., `general_014`, `medical_004`)
+3. **Set the correct position** based on the prompt's order in the category file
+4. **Use the English title** as the reference title in the index
+5. **Add a brief description** for identification purposes
+
+### Position-Based Matching
+
+The system works by:
+- **Position tracking**: Each prompt has a specific position within its category file (1st, 2nd, 3rd, etc.)
+- **Cross-language mapping**: The same position in different language files contains the translated version
+- **Consistent ordering**: All language versions maintain the same prompt order within each category
+
+### Index ID Naming Convention
+
+Use this format for prompt IDs:
+- **general**: `general_001`, `general_002`, etc.
+- **computer-science**: `cs_001`, `cs_002`, etc.
+- **medical-sciences**: `medical_001`, `medical_002`, etc.
+- **natural-sciences**: `natural_001`, `natural_002`, etc.
+- **social-sciences**: `social_001`, `social_002`, etc.
+- **humanities**: `humanities_001`, `humanities_002`, etc.
+- **mathematics-statistics**: `math_001`, `math_002`, etc.
+- **business-management**: `business_001`, `business_002`, etc.
+- **engineering**: `engineering_001`, `engineering_002`, etc.
+
+### Example Index Entry
+
+When adding a new prompt to `general.md`:
+
+```json
+{
+  "id": "general_014",
+  "position": 14,
+  "en_title": "Research Methodology Advisor",
+  "description": "Provides guidance on selecting appropriate research methodologies"
+}
+```
+
+### Index Update Process
+
+1. **Count existing prompts** in the target category to determine the next position
+2. **Generate unique ID** using the category prefix and next number
+3. **Add entry to index** with all required fields
+4. **Verify position accuracy** across all language files
+5. **Maintain alphabetical order** of categories in the index file
+
+### Critical Index Rules
+
+- **Never skip positions**: Positions must be sequential (1, 2, 3, 4...)
+- **Never reuse IDs**: Each prompt gets a unique ID that's never reused
+- **Always update index**: Every new prompt requires an index entry
+- **Maintain consistency**: Same position = same prompt across all languages
+- **Use English titles**: Index always uses English title as reference
+
+### Index Benefits
+
+This system enables:
+- **Cross-language copying**: Users can copy prompts in any language
+- **Consistent navigation**: Same prompt structure across all languages
+- **Easy maintenance**: Clear mapping between language versions
+- **Search functionality**: Enhanced search and filtering capabilities
+- **Quality assurance**: Verification that all languages have matching prompts
 
 ## 🔍 Content Analysis Guidelines
 
@@ -109,13 +205,6 @@ When adding a prompt, use this exact format:
 - Focus on academic benefits and use cases
 - Keep it concise but informative
 
-## 🔢 Numbering System
-
-1. **Read the target category file**
-2. **Find the highest existing number** in prompts (lines starting with `### [number].`)
-3. **Add 1** to get the next sequential number
-4. **Use this number** for the new prompt
-
 ## 📋 Step-by-Step Process
 
 When a user provides a prompt body:
@@ -137,21 +226,30 @@ When a user provides a prompt body:
 - Write 1-2 sentence description
 ```
 
-### 3. Primary Addition
+### 3. Index Management
 ```
-- Get next sequential number
+- Count existing prompts in target category to determine next position
+- Generate unique ID using category prefix (e.g., general_014, cs_005)
+- Update Prompts/prompt_index.json with new entry
+- Include: id, position, en_title, description
+```
+
+### 4. Primary Addition
+```
 - Format according to template
 - Add to appropriate category file in INPUT LANGUAGE first
 - If new tags were created, add them to the category file's sections
+- Ensure prompt is added at the correct position for index consistency
 ```
 
-### 4. Translation & Cross-Language Addition
+### 5. Translation & Cross-Language Addition
 ```
 - Translate the prompt, title, and description to ALL 11 other languages
 - Add translated versions to corresponding category files in ALL language folders
 - Languages: EN, JP, ZH, DE, FR, ES, IT, PT, RU, AR, KO, HI
-- Maintain same numbering and category across all 12 languages
+- Maintain same category and position across all 12 languages
 - Ensure consistency in formatting and academic terminology
+- Verify all language files have the same number of prompts
 ```
 
 ## ✅ Quality Checklist
@@ -163,11 +261,15 @@ Before adding a prompt, verify:
 - [ ] Title is descriptive and clear
 - [ ] Description explains use case and benefits
 - [ ] Format matches the template exactly
-- [ ] Sequential numbering is correct
 - [ ] Prompt text is preserved exactly as provided
+- [ ] **Index entry created** in `Prompts/prompt_index.json`
+- [ ] **Unique ID assigned** following naming convention
+- [ ] **Position number is correct** and sequential
 - [ ] Added to input language folder first
 - [ ] Translated and added to all other language folders
+- [ ] **Same position maintained** across all language files
 - [ ] Consistency maintained across all language versions
+- [ ] **All language files have same prompt count** after addition
 
 ## 🚫 What NOT to Do
 
@@ -175,10 +277,14 @@ Before adding a prompt, verify:
 - Don't skip adding new Research Areas or Prompt Categories when needed
 - Don't use generic or inappropriate tags
 - Don't skip the description or make it too generic
-- Don't use duplicate numbers
 - Don't add prompts to wrong categories (use general.md when uncertain)
+- **Don't forget to update the prompt index** (`Prompts/prompt_index.json`)
+- **Don't skip position numbers** or create gaps in numbering
+- **Don't reuse prompt IDs** that have been used before
+- **Don't add prompts at different positions** across language files
 - Don't forget to translate and add to all language folders
 - Don't create inconsistencies between language versions
+- **Don't leave language files with different prompt counts**
 
 ## 💡 Example Workflow
 
@@ -196,8 +302,18 @@ Before adding a prompt, verify:
 ```markdown
 I'll add this prompt to mathematics-statistics.md in all languages:
 
+**Index Entry Added:**
+```json
+{
+  "id": "math_003",
+  "position": 3,
+  "en_title": "Survey Data Pattern Analyzer",
+  "description": "Assists researchers in analyzing survey data to identify statistical patterns"
+}
+```
+
 ### English (EN/mathematics-statistics.md):
-### [Next Number]. Survey Data Pattern Analyzer
+### Survey Data Pattern Analyzer
 
 **Tags:** `Statistics` | `Statistical Analysis`
 
@@ -209,7 +325,7 @@ Help me analyze survey data and identify statistical patterns
 ```
 
 ### Japanese (JP/mathematics-statistics.md):
-### [Same Number]. 調査データパターン分析器
+### 調査データパターン分析器
 
 **Tags:** `統計学` | `統計分析`
 
@@ -221,7 +337,7 @@ Help me analyze survey data and identify statistical patterns
 ```
 
 ### Chinese (ZH/mathematics-statistics.md):
-### [Same Number]. 调查数据模式分析器
+### 调查数据模式分析器
 
 **Tags:** `统计学` | `统计分析`
 
@@ -232,7 +348,9 @@ Help me analyze survey data and identify statistical patterns
 帮助我分析调查数据并识别统计模式
 ```
 
-Successfully added to all language versions!
+✅ Successfully added to all language versions with index entry!
+✅ Position 3 maintained across all 12 language files
+✅ Index updated with unique ID: math_003
 ```
 
 **Example with new tags needed:**
@@ -260,11 +378,13 @@ A successful prompt addition should:
 3. **Include a clear, descriptive title**
 4. **Provide a helpful description** of use cases
 5. **Follow the exact formatting** specified
-6. **Use correct sequential numbering**
-7. **Preserve the original prompt text** exactly
+6. **Preserve the original prompt text** exactly
+7. **Have a proper index entry** with unique ID and correct position
 8. **Be added to input language first**, then translated to all other languages
-9. **Maintain consistency** across all language versions
-10. **Add new tags to category files** when appropriate tags don't exist
+9. **Maintain the same position** across all 12 language files
+10. **Maintain consistency** across all language versions
+11. **Add new tags to category files** when appropriate tags don't exist
+12. **Keep all language files synchronized** with the same prompt count
 
 ## 🎯 When to Use General Category
 

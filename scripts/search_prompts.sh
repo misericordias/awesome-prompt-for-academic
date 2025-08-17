@@ -598,6 +598,75 @@ copy_language_version() {
     esac
 }
 
+# Function to find prompt position by title in a category file
+find_prompt_position() {
+    local category_file="$1"
+    local target_title="$2"
+    
+    local position=1
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^###[[:space:]] ]]; then
+            # Extract title, handling both numbered and non-numbered formats
+            local line_title=""
+            if [[ "$line" =~ ^###[[:space:]]+([0-9]+)\.[[:space:]]*(.+)$ ]]; then
+                line_title="${BASH_REMATCH[2]}"
+            elif [[ "$line" =~ ^###[[:space:]]+(.+)$ ]]; then
+                line_title="${BASH_REMATCH[1]}"
+            fi
+            
+            # Trim whitespace
+            line_title=$(echo "$line_title" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            target_title=$(echo "$target_title" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            
+            if [[ "$line_title" == "$target_title" ]]; then
+                echo "$position"
+                return 0
+            fi
+            ((position++))
+        fi
+    done < "$category_file"
+    
+    echo "0"  # Not found
+}
+
+# Function to get prompt by position in a category file
+get_prompt_by_position() {
+    local category_file="$1"
+    local target_position="$2"
+    
+    local position=1
+    local target_line_num=""
+    
+    # Find the line number of the target position
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^###[[:space:]] ]]; then
+            if [[ $position -eq $target_position ]]; then
+                target_line_num=$(grep -n "^$(echo "$line" | sed 's/[[\.*^$()+?{|]/\\&/g')$" "$category_file" | head -1 | cut -d: -f1)
+                break
+            fi
+            ((position++))
+        fi
+    done < "$category_file"
+    
+    if [[ -n "$target_line_num" ]]; then
+        # Find the next prompt or end of file to determine the section boundary
+        local next_prompt_line=$(sed -n "$((target_line_num + 1)),\$p" "$category_file" | grep -n "^###" | head -1 | cut -d: -f1)
+        
+        if [[ -n "$next_prompt_line" ]]; then
+            # There's another prompt after this one
+            local end_line=$((target_line_num + next_prompt_line - 1))
+            local prompt_section=$(sed -n "${target_line_num},${end_line}p" "$category_file")
+        else
+            # This is the last prompt in the file
+            local prompt_section=$(sed -n "${target_line_num},\$p" "$category_file")
+        fi
+        
+        # Extract the prompt content (between ``` blocks)
+        local prompt_text=$(echo "$prompt_section" | sed -n '/```/,/```/p' | sed '1d' | sed '$d')
+        echo "$prompt_text"
+    fi
+}
+
 # Function to copy prompt in specific language
 copy_language_prompt() {
     local prompt_content="$1"
@@ -605,17 +674,18 @@ copy_language_prompt() {
     
     print_color "$BLUE" "🌍 Looking for $language version of this prompt..."
     
-    # Get the current prompt number and category from the search results
-    local current_prompt_number=""
+    # Get the current prompt title and category from the search results
+    local current_prompt_title=""
     local current_category=""
     
-    # Extract prompt number from the current search result
+    # Extract prompt title from the current search result
     if [[ -n "${SEARCH_RESULTS_TITLES[0]}" ]]; then
         local title="${SEARCH_RESULTS_TITLES[0]}"
-        if [[ "$title" =~ ^###\ ([0-9]+)\. ]]; then
-            current_prompt_number="${BASH_REMATCH[1]}"
-        else
-            current_prompt_number=""
+        # Extract title (remove ### and any numbering)
+        if [[ "$title" =~ ^###\ ([0-9]+)\.\ (.+) ]]; then
+            current_prompt_title="${BASH_REMATCH[2]}"
+        elif [[ "$title" =~ ^###\ (.+) ]]; then
+            current_prompt_title="${BASH_REMATCH[1]}"
         fi
         
         # Get category from the file path
@@ -623,8 +693,8 @@ copy_language_prompt() {
         current_category=$(basename "$file" .md)
     fi
     
-    if [[ -z "$current_prompt_number" ]] || [[ -z "$current_category" ]]; then
-        print_color "$RED" "❌ Could not determine prompt number or category. Copying English version instead."
+    if [[ -z "$current_prompt_title" ]] || [[ -z "$current_category" ]]; then
+        print_color "$RED" "❌ Could not determine prompt title or category. Copying English version instead."
         copy_prompt_to_clipboard "$prompt_content"
         return
     fi
@@ -647,33 +717,31 @@ copy_language_prompt() {
         return
     fi
     
-    # Search for the prompt in the language file
-    local prompt_line=$(grep -n "^### $current_prompt_number\." "$language_category_file" 2>/dev/null || true)
+    # Find the position of the current prompt in the English file
+    local english_category_file="$SCRIPT_DIR/Prompts/EN/$current_category.md"
+    local prompt_position=$(find_prompt_position "$english_category_file" "$current_prompt_title")
     
-    if [[ -z "$prompt_line" ]]; then
-        print_color "$YELLOW" "⚠️  Prompt $current_prompt_number not found in $language version of $current_category"
+    if [[ $prompt_position -eq 0 ]]; then
+        print_color "$YELLOW" "⚠️  Could not find prompt position for '$current_prompt_title' in English version"
         print_color "$CYAN" "Copying English version instead."
         copy_prompt_to_clipboard "$prompt_content"
         return
     fi
     
-    # Extract the prompt content from the language file
-    local line_num=$(echo "$prompt_line" | cut -d: -f1)
-    local next_prompt_line=$((line_num + 100))
-    local prompt_section=$(sed -n "${line_num},${next_prompt_line}p" "$language_category_file")
+    print_color "$CYAN" "📍 Found prompt at position $prompt_position in $current_category"
     
-    # Extract the prompt content (between ``` blocks)
-    local translated_prompt=$(echo "$prompt_section" | sed -n '/```/,/```/p' | sed '1d' | sed '$d')
+    # Get the prompt at the same position in the target language
+    local translated_prompt=$(get_prompt_by_position "$language_category_file" "$prompt_position")
     
     if [[ -z "$translated_prompt" ]]; then
-        print_color "$YELLOW" "⚠️  Could not extract prompt content from $language version"
+        print_color "$YELLOW" "⚠️  Could not find prompt at position $prompt_position in $language version of $current_category"
         print_color "$CYAN" "Copying English version instead."
         copy_prompt_to_clipboard "$prompt_content"
         return
     fi
     
     # Copy the translated prompt to clipboard
-    print_color "$GREEN" "✅ Found $language version of prompt $current_prompt_number in $current_category"
+    print_color "$GREEN" "✅ Found $language version of prompt '$current_prompt_title' (position $prompt_position) in $current_category"
     copy_prompt_to_clipboard "$translated_prompt"
 }
 
