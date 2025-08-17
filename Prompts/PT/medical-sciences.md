@@ -84,3 +84,14 @@ Considerações críticas:
 ```
 Defina o que é conhecido sobre a condição médica/intervenção, identifique a principal incerteza no conhecimento atual e declare a questão de pesquisa específica que este estudo aborda.
 ```
+
+### 3. Descrever o desenho do estudo e os critérios de participação
+
+**Tags:** `Epidemiologia` | `Protocolos de Pesquisa`
+
+**Description:** Auxilia na definição clara da metodologia de um estudo de pesquisa. Ajuda a especificar o desenho do estudo, o cenário, a duração e os critérios para a seleção dos participantes, o que é crucial para a redação de protocolos e manuscritos.
+
+**Prompt:**
+```
+Descreva o desenho do estudo usando terminologia precisa (por exemplo, ensaio clínico randomizado, estudo de coorte prospectivo), especifique o cenário e a duração e descreva os critérios de seleção dos participantes.
+```

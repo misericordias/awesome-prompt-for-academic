@@ -84,3 +84,14 @@ Kritische Überlegungen:
 ```
 Definieren Sie, was über einen medizinischen Zustand/eine Intervention bekannt ist, identifizieren Sie die wesentliche Unsicherheit im aktuellen Wissen und geben Sie die spezifische Forschungsfrage an, die diese Studie behandelt.
 ```
+
+### 3. Studiendesign und Teilnahmekriterien skizzieren
+
+**Tags:** `Epidemiologie` | `Forschungsprotokolle`
+
+**Description:** Hilft bei der klaren Definition der Methodik einer Forschungsstudie. Es hilft, das Studiendesign, den Schauplatz, die Dauer und die Kriterien für die Auswahl der Teilnehmer festzulegen, was für das Verfassen von Protokollen und Manuskripten entscheidend ist.
+
+**Prompt:**
+```
+Beschreiben Sie das Studiendesign unter Verwendung präziser Terminologie (z. B. randomisierte kontrollierte Studie, prospektive Kohortenstudie), geben Sie den Schauplatz und die Dauer an und skizzieren Sie die Auswahlkriterien für die Teilnehmer.
+```

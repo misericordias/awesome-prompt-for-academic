@@ -84,3 +84,14 @@ Consideraciones críticas:
 ```
 Defina lo que se sabe sobre la condición médica/intervención, identifique la incertidumbre clave en el conocimiento actual y establezca la pregunta de investigación específica que aborda este estudio.
 ```
+
+### 3. Describir el diseño del estudio y los criterios de participación
+
+**Tags:** `Epidemiología` | `Protocolos de Investigación`
+
+**Description:** Ayuda a definir claramente la metodología de un estudio de investigación. Ayuda a especificar el diseño del estudio, el entorno, la duración y los criterios de selección de los participantes, lo cual es crucial para redactar protocolos y manuscritos.
+
+**Prompt:**
+```
+Describa el diseño del estudio utilizando terminología precisa (p. ej., ensayo controlado aleatorizado, estudio de cohorte prospectivo), especifique el entorno y la duración, y describa los criterios de selección de los participantes.
+```

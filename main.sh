@@ -760,9 +760,8 @@ main() {
                             ;;
                         3)
                             echo ""
-                            print_color "$BLUE" "📂 Listing all categories..."
-                            echo ""
-                            "$SCRIPT_DIR/scripts/search_prompts.sh" -l
+                            print_color "$BLUE" "📂 Launching Category Browser..."
+                            "$SCRIPT_DIR/scripts/search_prompts.sh" -b
                             echo ""
                             print_color "$BLUE" "Press Enter to return to search menu..."
                             read -r input </dev/tty

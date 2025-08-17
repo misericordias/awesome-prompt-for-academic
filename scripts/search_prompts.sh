@@ -50,7 +50,7 @@ add_search_results() {
 print_color() {
     local color=$1
     local message=$2
-    echo -e "${color}${message}${NC}"
+        echo -e "${color}${message}${NC}"
 }
 
 # Function to show usage
@@ -63,6 +63,7 @@ show_usage() {
     echo "  -h, --help              Show this help message"
     echo "  -i, --interactive       Interactive search mode"
     echo "  -l, --list-categories   List all available categories"
+    echo "  -b, --browse-categories Browse prompts by category"
     echo "  -c, --category CATEGORY Search in specific category"
     echo ""
     echo "Examples:"
@@ -70,6 +71,7 @@ show_usage() {
     echo "  $0 -c computer-science neural          # Search 'neural' in computer science"
     echo "  $0 -i                                  # Interactive mode"
     echo "  $0 -l                                  # List all categories"
+    echo "  $0 -b                                  # Browse categories interactively"
     echo ""
 }
 
@@ -93,6 +95,229 @@ list_categories() {
         fi
     done
     echo ""
+}
+
+# Function to browse prompts in a specific category
+browse_category_prompts() {
+    local category_name="$1"
+    local category_file="$PROMPTS_DIR/$category_name.md"
+    
+    if [[ ! -f "$category_file" ]]; then
+        print_color "$RED" "Error: Category file not found: $category_file"
+        return 1
+    fi
+    
+    # Clear screen and show header
+    clear
+    print_header
+    print_color "$BOLD$CYAN" "📂 Category: $category_name"
+    echo ""
+    
+    # Get all prompts in the category
+    local prompts_data=$(grep -n "^### " "$category_file" 2>/dev/null || echo "")
+    
+    if [[ -z "$prompts_data" ]]; then
+        print_color "$YELLOW" "No prompts found in this category."
+        echo ""
+        print_color "$BLUE" "0 prompts available"
+        echo ""
+    else
+        # Count total prompts
+        local total_prompts=$(echo "$prompts_data" | wc -l | tr -d ' ')
+        print_color "$GREEN" "Found $total_prompts prompt(s) in $category_name:"
+        echo ""
+        
+        # Process each prompt
+        local prompt_count=1
+        while IFS= read -r prompt_line; do
+            if [[ -n "$prompt_line" ]]; then
+                local line_num=$(echo "$prompt_line" | cut -d: -f1)
+                local prompt_title=$(echo "$prompt_line" | cut -d: -f2-)
+                
+                # Extract prompt section
+                local next_prompt_line=$((line_num + 100))
+                local prompt_section=$(sed -n "${line_num},${next_prompt_line}p" "$category_file")
+                
+                # Display prompt information
+                printf "%2d. %s\n" "$prompt_count" "$prompt_title"
+                
+                # Show tags if available
+                local tags_line=$(echo "$prompt_section" | grep -m 1 "^\*\*Tags:\*\*" || echo "")
+                if [[ -n "$tags_line" ]]; then
+                    print_color "$YELLOW" "   🏷️  $tags_line"
+                fi
+                
+                # Show description if available
+                local desc_line=$(echo "$prompt_section" | grep -m 1 "^\*\*Description:\*\*" || echo "")
+                if [[ -n "$desc_line" ]]; then
+                    # Remove the **Description:** prefix and show the actual description
+                    local description=$(echo "$desc_line" | sed 's/^\*\*Description:\*\* //')
+                    print_color "$MAGENTA" "   📝 $description"
+                fi
+                
+                echo ""
+                ((prompt_count++))
+            fi
+        done <<< "$prompts_data"
+    fi
+    
+    # Show navigation options
+    print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    print_color "$GREEN" "  1. 🔍 View specific prompt details"
+    print_color "$GREEN" "  2. ↩️  Back to List All Categories"
+    print_color "$GREEN" "  3. 🏠 Back to Search Menu"
+    echo ""
+    
+    while true; do
+        echo -n "Select option (1-3): "
+        read -r browse_choice </dev/tty
+        
+        case $browse_choice in
+            1)
+                if [[ -n "$prompts_data" ]]; then
+                    echo -n "Enter prompt number (1-$total_prompts): "
+                    read -r prompt_selection </dev/tty
+                    
+                    if [[ "$prompt_selection" =~ ^[0-9]+$ ]] && [[ $prompt_selection -ge 1 ]] && [[ $prompt_selection -le $total_prompts ]]; then
+                        # Find the selected prompt
+                        local selected_line=$(echo "$prompts_data" | sed -n "${prompt_selection}p")
+                        local line_num=$(echo "$selected_line" | cut -d: -f1)
+                        
+                        # Clear and show prompt details
+                        clear
+                        print_header
+                        print_color "$BOLD$CYAN" "📋 Prompt Details:"
+                        echo ""
+                        
+                        # Extract and display full prompt
+                        local next_prompt_line=$((line_num + 100))
+                        local full_prompt=$(sed -n "${line_num},${next_prompt_line}p" "$category_file")
+                        
+                        # Display the prompt
+                        print_color "$CYAN" "$(echo \"$selected_line\" | cut -d: -f2-)"
+                        echo ""
+                        
+                        # Show tags
+                        local tags_line=$(echo "$full_prompt" | grep -m 1 "^\*\*Tags:\*\*" || echo "")
+                        if [[ -n "$tags_line" ]]; then
+                            print_color "$YELLOW" "$tags_line"
+                            echo ""
+                        fi
+                        
+                        # Show description
+                        local desc_line=$(echo "$full_prompt" | grep -m 1 "^\*\*Description:\*\*" || echo "")
+                        if [[ -n "$desc_line" ]]; then
+                            echo "$desc_line"
+                            echo ""
+                        fi
+                        
+                        # Show prompt content
+                        local prompt_content=$(echo "$full_prompt" | sed -n '/```/,/```/p' | sed '1d' | sed '$d')
+                        if [[ -n "$prompt_content" ]]; then
+                            print_color "$MAGENTA" "**Prompt:**"
+                            echo ""
+                            echo "$prompt_content"
+                            echo ""
+                        fi
+                        
+                        print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                        echo ""
+                        print_color "$BLUE" "Press Enter to return to category view..."
+                        read -r </dev/tty
+                        
+                        # Return to category view
+                        browse_category_prompts "$category_name"
+                        return
+                    else
+                        print_color "$RED" "Invalid prompt number. Please try again."
+                    fi
+                else
+                    print_color "$YELLOW" "No prompts available to view."
+                fi
+                ;;
+            2)
+                # Back to list all categories
+                return 0
+                ;;
+            3)
+                # Back to search menu
+                return 1
+                ;;
+            *)
+                print_color "$RED" "Invalid choice. Please select 1-3."
+                ;;
+        esac
+    done
+}
+
+# Function to show interactive category browser
+show_category_browser() {
+    while true; do
+        clear
+        print_header
+        print_color "$BOLD$CYAN" "📂 Available Categories Browser"
+        echo ""
+        
+        if [[ ! -d "$PROMPTS_DIR" ]]; then
+            print_color "$RED" "Error: Prompts directory not found at $PROMPTS_DIR"
+            return 1
+        fi
+        
+        # List categories with numbers
+        local categories=()
+        local count=1
+        for file in "$PROMPTS_DIR"/*.md; do
+            if [[ -f "$file" ]]; then
+                local category=$(basename "$file" .md)
+                local title=$(head -n 1 "$file" | sed 's/^# //')
+                categories+=("$category")
+                printf "%2d. %-25s %s\n" "$count" "$category" "($title)"
+                ((count++))
+            fi
+        done
+        
+        if [[ ${#categories[@]} -eq 0 ]]; then
+            print_color "$YELLOW" "No categories found."
+            return 1
+        fi
+        
+        echo ""
+        print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+        print_color "$GREEN" "Select a category to browse prompts, or:"
+        print_color "$GREEN" "  0. ↩️  Back to Search Menu"
+        echo ""
+        
+        echo -n "Enter category number (1-${#categories[@]}) or 0 to return: "
+        read -r category_choice </dev/tty
+        
+        case $category_choice in
+            0)
+                return 1
+                ;;
+            [1-9]|[1-9][0-9])
+                if [[ $category_choice -ge 1 ]] && [[ $category_choice -le ${#categories[@]} ]]; then
+                    local selected_category="${categories[$((category_choice-1))]}"
+                    browse_category_prompts "$selected_category"
+                    
+                    # Check return value to determine next action
+                    if [[ $? -eq 1 ]]; then
+                        # User chose to go back to search menu
+                        return 1
+                    fi
+                    # Otherwise, continue browsing categories
+                else
+                    print_color "$RED" "Invalid category number. Please try again."
+                    sleep 1
+                fi
+                ;;
+            *)
+                print_color "$RED" "Invalid choice. Please enter a number."
+                sleep 1
+                ;;
+        esac
+    done
 }
 
 # Function to search in a file
@@ -128,8 +353,8 @@ search_in_file() {
             if echo "$prompt_section" | grep -qi "$term"; then
                 matches=true
                 break
-            fi
-        done
+                fi
+            done
         
         if [[ "$matches" == "true" ]]; then
             ((found_results++))
@@ -150,7 +375,7 @@ display_search_summary() {
     fi
     
     print_color "$GREEN" "Found $total_results result(s):"
-    echo ""
+                echo ""
     
     # Display detailed information for each result
     for i in "${!SEARCH_RESULTS_TITLES[@]}"; do
@@ -179,9 +404,9 @@ display_search_summary() {
             # Remove the **Description:** prefix and show the actual description
             local description=$(echo "$desc_line" | sed 's/^\*\*Description:\*\* //')
             print_color "$MAGENTA" "   📝 $description"
-        fi
-        
-        echo ""
+            fi
+            
+            echo ""
     done
     
     # Ask user to select one for details
@@ -380,15 +605,74 @@ copy_language_prompt() {
     
     print_color "$BLUE" "🌍 Looking for $language version of this prompt..."
     
-    # For now, we'll just copy the English version since other languages may not have this prompt yet
-    # In the future, this could search for translated versions
-    if [[ "$language" == "EN" ]]; then
-        copy_prompt_to_clipboard "$prompt_content"
-    else
-        print_color "$YELLOW" "⚠️  $language version not yet available."
-        print_color "$CYAN" "Copying English version instead. Translation feature coming soon!"
-        copy_prompt_to_clipboard "$prompt_content"
+    # Get the current prompt number and category from the search results
+    local current_prompt_number=""
+    local current_category=""
+    
+    # Extract prompt number from the current search result
+    if [[ -n "${SEARCH_RESULTS_TITLES[0]}" ]]; then
+        local title="${SEARCH_RESULTS_TITLES[0]}"
+        if [[ "$title" =~ ^###\ ([0-9]+)\. ]]; then
+            current_prompt_number="${BASH_REMATCH[1]}"
+        fi
+        
+        # Get category from the file path
+        local file="${SEARCH_RESULTS_FILES[0]}"
+        current_category=$(basename "$file" .md)
     fi
+    
+    if [[ -z "$current_prompt_number" ]] || [[ -z "$current_category" ]]; then
+        print_color "$RED" "❌ Could not determine prompt number or category. Copying English version instead."
+        copy_prompt_to_clipboard "$prompt_content"
+        return
+    fi
+    
+    # Check if the language folder exists
+    local language_dir="$SCRIPT_DIR/Prompts/$language"
+    if [[ ! -d "$language_dir" ]]; then
+        print_color "$YELLOW" "⚠️  Language folder for $language not found at $language_dir"
+        print_color "$CYAN" "Copying English version instead."
+        copy_prompt_to_clipboard "$prompt_content"
+        return
+    fi
+    
+    # Check if the category file exists in the language folder
+    local language_category_file="$language_dir/$current_category.md"
+    if [[ ! -f "$language_category_file" ]]; then
+        print_color "$YELLOW" "⚠️  Category file for $language not found: $language_category_file"
+        print_color "$CYAN" "Copying English version instead."
+        copy_prompt_to_clipboard "$prompt_content"
+        return
+    fi
+    
+    # Search for the prompt in the language file
+    local prompt_line=$(grep -n "^### $current_prompt_number\." "$language_category_file" 2>/dev/null || true)
+    
+    if [[ -z "$prompt_line" ]]; then
+        print_color "$YELLOW" "⚠️  Prompt $current_prompt_number not found in $language version of $current_category"
+        print_color "$CYAN" "Copying English version instead."
+        copy_prompt_to_clipboard "$prompt_content"
+        return
+    fi
+    
+    # Extract the prompt content from the language file
+    local line_num=$(echo "$prompt_line" | cut -d: -f1)
+    local next_prompt_line=$((line_num + 100))
+    local prompt_section=$(sed -n "${line_num},${next_prompt_line}p" "$language_category_file")
+    
+    # Extract the prompt content (between ``` blocks)
+    local translated_prompt=$(echo "$prompt_section" | sed -n '/```/,/```/p' | sed '1d' | sed '$d')
+    
+    if [[ -z "$translated_prompt" ]]; then
+        print_color "$YELLOW" "⚠️  Could not extract prompt content from $language version"
+        print_color "$CYAN" "Copying English version instead."
+        copy_prompt_to_clipboard "$prompt_content"
+        return
+    fi
+    
+    # Copy the translated prompt to clipboard
+    print_color "$GREEN" "✅ Found $language version of prompt $current_prompt_number in $current_category"
+    copy_prompt_to_clipboard "$translated_prompt"
 }
 
 # Function for interactive search
@@ -514,12 +798,14 @@ show_search_options_menu() {
                 ;;
             3)
                 echo ""
-                print_color "$BLUE" "📂 Listing all categories..."
-                echo ""
-                list_categories
-                echo ""
-                print_color "$BLUE" "Press Enter to return to search menu..."
-                read -r input </dev/tty
+                print_color "$BLUE" "📂 Launching Category Browser..."
+                show_category_browser
+                
+                # Check if user wants to return to search menu
+                if [[ $? -eq 1 ]]; then
+                    # User chose to go back to search menu, continue loop
+                    continue
+                fi
                 ;;
             4|*)
                 print_color "$BLUE" "Returning to main menu..."
@@ -605,6 +891,7 @@ main() {
     # Default options
     local INTERACTIVE=false
     local LIST_CATEGORIES=false
+    local BROWSE_CATEGORIES=false
     local CATEGORY=""
     
     # Parse command line arguments
@@ -620,6 +907,10 @@ main() {
                 ;;
             -l|--list-categories)
                 LIST_CATEGORIES=true
+                shift
+                ;;
+            -b|--browse-categories)
+                BROWSE_CATEGORIES=true
                 shift
                 ;;
             -c|--category)
@@ -647,6 +938,11 @@ main() {
     # Handle special modes
     if [[ "$LIST_CATEGORIES" == "true" ]]; then
         list_categories
+        exit 0
+    fi
+    
+    if [[ "$BROWSE_CATEGORIES" == "true" ]]; then
+        show_category_browser
         exit 0
     fi
     
@@ -680,9 +976,9 @@ main() {
         
         if [[ $total_results -eq 0 ]]; then
             print_color "$YELLOW" "No results found in category '$CATEGORY'"
-            exit 0
-        fi
-        
+        exit 0
+    fi
+    
         display_search_summary "$total_results"
         
         read -r selection </dev/tty

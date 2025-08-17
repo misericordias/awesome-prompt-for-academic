@@ -84,3 +84,14 @@ Considerazioni critiche:
 ```
 Definire ciò che è noto sulla condizione medica/intervento, identificare l'incertezza chiave nella conoscenza attuale e indicare la domanda di ricerca specifica a cui questo studio si rivolge.
 ```
+
+### 3. Delineare il disegno dello studio e i criteri di partecipazione
+
+**Tags:** `Epidemiologia` | `Protocolli di Ricerca`
+
+**Description:** Assiste nella definizione chiara della metodologia di uno studio di ricerca. Aiuta a specificare il disegno dello studio, l'impostazione, la durata e i criteri per la selezione dei partecipanti, che è fondamentale per la stesura di protocolli e manoscritti.
+
+**Prompt:**
+```
+Descrivere il disegno dello studio utilizzando una terminologia precisa (ad es. studio controllato randomizzato, studio di coorte prospettico), specificare l'impostazione e la durata e delineare i criteri di selezione dei partecipanti.
+```

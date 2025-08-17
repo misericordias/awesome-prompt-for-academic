@@ -84,3 +84,14 @@ Considérations critiques:
 ```
 Définissez ce qui est connu sur la condition médicale/intervention, identifiez l'incertitude clé dans les connaissances actuelles et énoncez la question de recherche spécifique à laquelle cette étude répond.
 ```
+
+### 3. Décrire le plan d'étude et les critères de participation
+
+**Tags:** `Épidémiologie` | `Protocoles de Recherche`
+
+**Description:** Aide à définir clairement la méthodologie d'une étude de recherche. Il aide à spécifier le plan d'étude, le cadre, la durée et les critères de sélection des participants, ce qui est crucial pour la rédaction de protocoles et de manuscrits.
+
+**Prompt:**
+```
+Décrivez le plan d'étude en utilisant une terminologie précise (par exemple, essai contrôlé randomisé, étude de cohorte prospective), spécifiez le cadre et la durée, et décrivez les critères de sélection des participants.
+```

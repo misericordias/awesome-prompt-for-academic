@@ -85,3 +85,14 @@ Critical Considerations:
 ```
 Define what is known about medical condition/intervention, identify the key uncertainty in current knowledge, and state the specific research question this study addresses
 ```
+
+### 3. Outline Study Design and Participant Criteria
+
+**Tags:** `Epidemiology` | `Research Protocols`
+
+**Description:** Assists in clearly defining the methodology of a research study. It helps specify the study design, setting, duration, and the criteria for participant selection, which is crucial for writing protocols and manuscripts.
+
+**Prompt:**
+```
+Describe the study design using precise terminology (e.g., randomized controlled trial, prospective cohort study), specify the setting and duration, and outline participant selection criteria
+```
