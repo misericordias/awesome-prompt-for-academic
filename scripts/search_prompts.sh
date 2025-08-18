@@ -18,8 +18,32 @@ NC='\033[0m' # No Color
 
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PROMPTS_DIR="$SCRIPT_DIR/Prompts/EN"
 README_FILE="$SCRIPT_DIR/README.md"
+PROFILE_FILE="$SCRIPT_DIR/Profiles/user_profile.conf"
+
+# Function to get prompts directory based on interface language
+get_prompts_directory() {
+    local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+    local lang_dir="$SCRIPT_DIR/Prompts/$interface_lang"
+    
+    # Check if the language directory exists, fallback to EN if not
+    if [[ -d "$lang_dir" ]]; then
+        echo "$lang_dir"
+    else
+        echo "$SCRIPT_DIR/Prompts/EN"
+    fi
+}
+
+# Set prompts directory based on interface language
+PROMPTS_DIR=$(get_prompts_directory)
+
+# Function to refresh prompts directory (useful if language changes during runtime)
+refresh_prompts_directory() {
+    PROMPTS_DIR=$(get_prompts_directory)
+}
+
+# Load language strings
+source "$SCRIPT_DIR/Profiles/language_strings.sh" 2>/dev/null || true
 
 # Global variable for search results
 SEARCH_RESULTS_COUNT=0
@@ -46,42 +70,69 @@ add_search_results() {
     SEARCH_RESULTS_COUNT=${#SEARCH_RESULTS_TITLES[@]}
 }
 
+# Function to read profile value
+read_profile_value() {
+    local key="$1"
+    local default_value="$2"
+    
+    if [[ -f "$PROFILE_FILE" ]]; then
+        local value=$(grep "^$key=" "$PROFILE_FILE" | cut -d'=' -f2 | cut -d'#' -f1 | tr -d ' ')
+        if [[ -n "$value" ]]; then
+            echo "$value"
+        else
+            echo "$default_value"
+        fi
+    else
+        echo "$default_value"
+    fi
+}
+
 # Function to print colored output
 print_color() {
     local color=$1
     local message=$2
+    local show_colors=$(read_profile_value "SHOW_COLORS" "true")
+    
+    if [[ "$show_colors" == "true" ]]; then
         echo -e "${color}${message}${NC}"
+    else
+        echo "$message"
+    fi
 }
 
 # Function to show usage
 show_usage() {
-    print_color "$BLUE" "🔍 Simple Prompt Search Tool"
+    local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+    
+    print_color "$BLUE" "$(get_string "SEARCH_TOOL_TITLE" "$interface_lang")"
     echo ""
-    echo "Usage: $0 [OPTIONS] [KEYWORDS...]"
+    echo "$(get_string "USAGE" "$interface_lang") $0 [OPTIONS] [KEYWORDS...]"
     echo ""
-    echo "Options:"
-    echo "  -h, --help              Show this help message"
-    echo "  -i, --interactive       Interactive search mode"
-    echo "  -l, --list-categories   List all available categories"
-    echo "  -b, --browse-categories Browse prompts by category"
-    echo "  -c, --category CATEGORY Search in specific category"
+    echo "$(get_string "OPTIONS" "$interface_lang")"
+    echo "  -h, --help              $(get_string "HELP_MESSAGE" "$interface_lang")"
+    echo "  -i, --interactive       $(get_string "INTERACTIVE_MODE" "$interface_lang")"
+    echo "  -l, --list-categories   $(get_string "LIST_CATEGORIES" "$interface_lang")"
+    echo "  -b, --browse-categories $(get_string "BROWSE_CATEGORIES" "$interface_lang")"
+    echo "  -c, --category CATEGORY $(get_string "SEARCH_CATEGORY" "$interface_lang")"
     echo ""
-    echo "Examples:"
+    echo "$(get_string "EXAMPLES" "$interface_lang")"
     echo "  $0 machine learning                    # Search for 'machine learning'"
     echo "  $0 -c computer-science neural          # Search 'neural' in computer science"
-    echo "  $0 -i                                  # Interactive mode"
-    echo "  $0 -l                                  # List all categories"
-    echo "  $0 -b                                  # Browse categories interactively"
+    echo "  $0 -i                                  # $(get_string "INTERACTIVE_MODE_DESC" "$interface_lang")"
+    echo "  $0 -l                                  # $(get_string "LIST_ALL_CATEGORIES_DESC" "$interface_lang")"
+    echo "  $0 -b                                  # $(get_string "BROWSE_CATEGORIES_DESC" "$interface_lang")"
     echo ""
 }
 
 # Function to list categories
 list_categories() {
-    print_color "$BLUE" "📂 Available Categories:"
+    local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+    
+    print_color "$BLUE" "$(get_string "AVAILABLE_CATEGORIES" "$interface_lang")"
     echo ""
     
     if [[ ! -d "$PROMPTS_DIR" ]]; then
-        print_color "$RED" "Error: Prompts directory not found at $PROMPTS_DIR"
+        print_color "$RED" "$(get_string "ERROR_PROMPTS_DIR_NOT_FOUND" "$interface_lang") $PROMPTS_DIR"
         exit 1
     fi
     
@@ -101,30 +152,31 @@ list_categories() {
 browse_category_prompts() {
     local category_name="$1"
     local category_file="$PROMPTS_DIR/$category_name.md"
+    local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
     
     if [[ ! -f "$category_file" ]]; then
-        print_color "$RED" "Error: Category file not found: $category_file"
+        print_color "$RED" "$(get_string "ERROR_CATEGORY_FILE_NOT_FOUND" "$interface_lang") $category_file"
         return 1
     fi
     
     # Clear screen and show header
     clear
     print_header
-    print_color "$BOLD$CYAN" "📂 Category: $category_name"
+    print_color "$BOLD$CYAN" "📂 $(get_string "CATEGORY" "$interface_lang") $category_name"
     echo ""
     
     # Get all prompts in the category
     local prompts_data=$(grep -n "^### " "$category_file" 2>/dev/null || echo "")
     
     if [[ -z "$prompts_data" ]]; then
-        print_color "$YELLOW" "No prompts found in this category."
+        print_color "$YELLOW" "$(get_string "NO_PROMPTS_FOUND_CATEGORY" "$interface_lang")"
         echo ""
-        print_color "$BLUE" "0 prompts available"
+        print_color "$BLUE" "0 $(get_string "PROMPTS_AVAILABLE" "$interface_lang")"
         echo ""
     else
         # Count total prompts
         local total_prompts=$(echo "$prompts_data" | wc -l | tr -d ' ')
-        print_color "$GREEN" "Found $total_prompts prompt(s) in $category_name:"
+        print_color "$GREEN" "$(get_string "FOUND_PROMPTS_IN" "$interface_lang") $category_name $(get_string "FOUND_PROMPTS_IN_SUFFIX" "$interface_lang") $total_prompts $(get_string "PROMPTS_SUFFIX" "$interface_lang")"
         echo ""
         
         # Process each prompt
@@ -164,19 +216,19 @@ browse_category_prompts() {
     # Show navigation options
     print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
-    print_color "$GREEN" "  1. 🔍 View specific prompt details"
-    print_color "$GREEN" "  2. ↩️  Back to List All Categories"
-    print_color "$GREEN" "  3. 🏠 Back to Search Menu"
+    print_color "$GREEN" "  1. $(get_string "VIEW_SPECIFIC_PROMPT" "$interface_lang")"
+    print_color "$GREEN" "  2. $(get_string "BACK_TO_LIST_CATEGORIES" "$interface_lang")"
+    print_color "$GREEN" "  3. $(get_string "BACK_TO_SEARCH_MENU_OPTION" "$interface_lang")"
     echo ""
     
     while true; do
-        echo -n "Select option (1-3): "
+        echo -n "$(get_string "SELECT_OPTION_1_3" "$interface_lang") "
         read -r browse_choice </dev/tty
         
         case $browse_choice in
             1)
                 if [[ -n "$prompts_data" ]]; then
-                    echo -n "Enter prompt number (1-$total_prompts): "
+                    echo -n "$(get_string "ENTER_PROMPT_NUMBER" "$interface_lang") (1-$total_prompts): "
                     read -r prompt_selection </dev/tty
                     
                     if [[ "$prompt_selection" =~ ^[0-9]+$ ]] && [[ $prompt_selection -ge 1 ]] && [[ $prompt_selection -le $total_prompts ]]; then
@@ -184,10 +236,15 @@ browse_category_prompts() {
                         local selected_line=$(echo "$prompts_data" | sed -n "${prompt_selection}p")
                         local line_num=$(echo "$selected_line" | cut -d: -f1)
                         
+                        # Set up search results arrays for the copy language functionality
+                        clear_search_results
+                        local prompt_title=$(echo "$selected_line" | cut -d: -f2-)
+                        add_search_results "$prompt_title" "$category_file" "$line_num"
+                        
                         # Clear and show prompt details
                         clear
                         print_header
-                        print_color "$BOLD$CYAN" "📋 Prompt Details:"
+                        print_color "$BOLD$CYAN" "$(get_string "PROMPT_DETAILS" "$interface_lang")"
                         echo ""
                         
                         # Extract and display full prompt
@@ -222,18 +279,15 @@ browse_category_prompts() {
                         fi
                         
                         print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-                        echo ""
-                        print_color "$BLUE" "Press Enter to return to category view..."
-                        read -r </dev/tty
                         
-                        # Return to category view
-                        browse_category_prompts "$category_name"
+                        # Show category-specific prompt action menu
+                        show_category_prompt_action_menu "$prompt_content" "$category_name"
                         return
                     else
-                        print_color "$RED" "Invalid prompt number. Please try again."
+                        print_color "$RED" "$(get_string "INVALID_PROMPT_NUMBER" "$interface_lang")"
                     fi
                 else
-                    print_color "$YELLOW" "No prompts available to view."
+                    print_color "$YELLOW" "$(get_string "NO_PROMPTS_AVAILABLE_VIEW" "$interface_lang")"
                 fi
                 ;;
             2)
@@ -245,7 +299,7 @@ browse_category_prompts() {
                 return 1
                 ;;
             *)
-                print_color "$RED" "Invalid choice. Please select 1-3."
+                print_color "$RED" "$(get_string "INVALID_CHOICE_SELECT_1_3" "$interface_lang")"
                 ;;
         esac
     done
@@ -256,11 +310,15 @@ show_category_browser() {
     while true; do
         clear
         print_header
-        print_color "$BOLD$CYAN" "📂 Available Categories Browser"
+        # Refresh prompts directory in case language changed
+        refresh_prompts_directory
+        
+        local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+        print_color "$BOLD$CYAN" "$(get_string "AVAILABLE_CATEGORIES" "$interface_lang")"
         echo ""
         
         if [[ ! -d "$PROMPTS_DIR" ]]; then
-            print_color "$RED" "Error: Prompts directory not found at $PROMPTS_DIR"
+            print_color "$RED" "$(get_string "ERROR_PROMPTS_DIR_NOT_FOUND" "$interface_lang") $PROMPTS_DIR"
             return 1
         fi
         
@@ -278,18 +336,18 @@ show_category_browser() {
         done
         
         if [[ ${#categories[@]} -eq 0 ]]; then
-            print_color "$YELLOW" "No categories found."
+            print_color "$YELLOW" "$(get_string "NO_CATEGORIES_FOUND" "$interface_lang")"
             return 1
         fi
         
         echo ""
         print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo ""
-        print_color "$GREEN" "Select a category to browse prompts, or:"
-        print_color "$GREEN" "  0. ↩️  Back to Search Menu"
+        print_color "$GREEN" "$(get_string "SELECT_CATEGORY_TO_BROWSE" "$interface_lang")"
+        print_color "$GREEN" "  0. $(get_string "BACK_TO_SEARCH_MENU" "$interface_lang")"
         echo ""
         
-        echo -n "Enter category number (1-${#categories[@]}) or 0 to return: "
+        echo -n "$(get_string "ENTER_CATEGORY_NUMBER" "$interface_lang") (1-${#categories[@]}) $(get_string "OR_RETURN" "$interface_lang") "
         read -r category_choice </dev/tty
         
         case $category_choice in
@@ -308,12 +366,12 @@ show_category_browser() {
                     fi
                     # Otherwise, continue browsing categories
                 else
-                    print_color "$RED" "Invalid category number. Please try again."
+                    print_color "$RED" "$(get_string "INVALID_CATEGORY_NUMBER" "$interface_lang")"
                     sleep 1
                 fi
                 ;;
             *)
-                print_color "$RED" "Invalid choice. Please enter a number."
+                print_color "$RED" "$(get_string "INVALID_CHOICE_ENTER_NUMBER" "$interface_lang")"
                 sleep 1
                 ;;
         esac
@@ -476,19 +534,20 @@ show_prompt_details() {
 # Function to show prompt action menu
 show_prompt_action_menu() {
     local prompt_content="$1"
+    local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
     
     while true; do
         echo ""
-        print_color "$BOLD$CYAN" "📋 What would you like to do with this prompt?"
+        print_color "$BOLD$CYAN" "$(get_string "WHAT_TO_DO_WITH_PROMPT" "$interface_lang")"
         echo ""
-        print_color "$GREEN" "  1. 📋 Copy prompt to clipboard"
-        print_color "$GREEN" "  2. 🌍 Copy specific language version"
-        print_color "$GREEN" "  3. ↩️  Back to search results"
+        print_color "$GREEN" "  1. $(get_string "COPY_PROMPT_TO_CLIPBOARD" "$interface_lang")"
+        print_color "$GREEN" "  2. $(get_string "COPY_SPECIFIC_LANGUAGE" "$interface_lang")"
+        print_color "$GREEN" "  3. $(get_string "BACK_TO_SEARCH_RESULTS" "$interface_lang")"
         echo ""
         print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo ""
         
-        echo -n "Select option (1-3): "
+        echo -n "$(get_string "SELECT_OPTION_1_3_PROMPT" "$interface_lang") "
         read -r action_choice </dev/tty
         
         case $action_choice in
@@ -499,11 +558,11 @@ show_prompt_action_menu() {
                 copy_language_version "$prompt_content"
                 ;;
             3)
-                print_color "$BLUE" "Returning to search results..."
+                print_color "$BLUE" "$(get_string "RETURNING_TO_SEARCH_RESULTS" "$interface_lang")"
                 return 0
                 ;;
             *)
-                print_color "$RED" "Invalid choice. Please select 1-3."
+                print_color "$RED" "$(get_string "INVALID_CHOICE_SELECT_1_3" "$interface_lang")"
                 ;;
         esac
     done
@@ -525,13 +584,15 @@ copy_prompt_to_clipboard() {
         clipboard_cmd="clip.exe"  # Windows with clip.exe
     fi
     
+    local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+    
     if [[ -z "$clipboard_cmd" ]]; then
-        print_color "$RED" "❌ Clipboard command not found. Please install one of:"
-        echo "  - macOS: pbcopy (built-in)"
-        echo "  - Linux: xclip or xsel"
-        echo "  - Windows: clip.exe (built-in)"
+        print_color "$RED" "$(get_string "CLIPBOARD_NOT_FOUND" "$interface_lang")"
+        echo "  - $(get_string "MACOS_PBCOPY" "$interface_lang")"
+        echo "  - $(get_string "LINUX_XCLIP" "$interface_lang")"
+        echo "  - $(get_string "WINDOWS_CLIP" "$interface_lang")"
         echo ""
-        print_color "$YELLOW" "Prompt content (copy manually):"
+        print_color "$YELLOW" "$(get_string "PROMPT_CONTENT_COPY_MANUALLY" "$interface_lang")"
         echo "----------------------------------------"
         echo "$prompt_content"
         echo "----------------------------------------"
@@ -541,40 +602,81 @@ copy_prompt_to_clipboard() {
     # Copy to clipboard
     echo "$prompt_content" | eval "$clipboard_cmd"
     if [[ $? -eq 0 ]]; then
-        print_color "$GREEN" "✅ Prompt copied to clipboard successfully!"
+        print_color "$GREEN" "$(get_string "PROMPT_COPIED_SUCCESS" "$interface_lang")"
     else
-        print_color "$RED" "❌ Failed to copy to clipboard"
+        print_color "$RED" "$(get_string "FAILED_COPY_CLIPBOARD" "$interface_lang")"
         echo ""
-        print_color "$YELLOW" "Prompt content (copy manually):"
+        print_color "$YELLOW" "$(get_string "PROMPT_CONTENT_COPY_MANUALLY" "$interface_lang")"
         echo "----------------------------------------"
         echo "$prompt_content"
         echo "----------------------------------------"
     fi
 }
 
+# Function to show category-specific prompt action menu
+show_category_prompt_action_menu() {
+    local prompt_content="$1"
+    local category_name="$2"
+    local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+    
+    while true; do
+        echo ""
+        print_color "$BOLD$CYAN" "$(get_string "WHAT_TO_DO_WITH_PROMPT" "$interface_lang")"
+        echo ""
+        print_color "$GREEN" "  1. $(get_string "COPY_PROMPT_TO_CLIPBOARD" "$interface_lang")"
+        print_color "$GREEN" "  2. $(get_string "COPY_SPECIFIC_LANGUAGE" "$interface_lang")"
+        print_color "$GREEN" "  3. $(get_string "BACK_TO_CATEGORY" "$interface_lang") ($category_name)"
+        echo ""
+        print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+        
+        echo -n "$(get_string "SELECT_OPTION_1_3_PROMPT" "$interface_lang") "
+        read -r action_choice </dev/tty
+        
+        case $action_choice in
+            1)
+                copy_prompt_to_clipboard "$prompt_content"
+                ;;
+            2)
+                copy_language_version "$prompt_content"
+                ;;
+            3)
+                print_color "$BLUE" "$(get_string "RETURNING_TO_CATEGORY_VIEW" "$interface_lang")"
+                # Return to category view
+                browse_category_prompts "$category_name"
+                return
+                ;;
+            *)
+                print_color "$RED" "$(get_string "INVALID_CHOICE_SELECT_1_3" "$interface_lang")"
+                ;;
+        esac
+    done
+}
+
 # Function to copy specific language version
 copy_language_version() {
     local prompt_content="$1"
+    local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
     
     echo ""
-    print_color "$BOLD$CYAN" "🌍 Select Language Version:"
+    print_color "$BOLD$CYAN" "$(get_string "SELECT_LANGUAGE_VERSION" "$interface_lang")"
     echo ""
-    print_color "$GREEN" "  1. 🇺🇸 English (EN)"
-    print_color "$GREEN" "  2. 🇯🇵 Japanese (JP)"
-    print_color "$GREEN" "  3. 🇨🇳 Chinese (ZH)"
-    print_color "$GREEN" "  4. 🇩🇪 German (DE)"
-    print_color "$GREEN" "  5. 🇫🇷 French (FR)"
-    print_color "$GREEN" "  6. 🇪🇸 Spanish (ES)"
-    print_color "$GREEN" "  7. 🇮🇹 Italian (IT)"
-    print_color "$GREEN" "  8. 🇵🇹 Portuguese (PT)"
-    print_color "$GREEN" "  9. 🇷🇺 Russian (RU)"
-    print_color "$GREEN" "  10. 🇸🇦 Arabic (AR)"
-    print_color "$GREEN" "  11. 🇰🇷 Korean (KO)"
-    print_color "$GREEN" "  12. 🇮🇳 Hindi (HI)"
-    print_color "$GREEN" "  13. ↩️  Back to prompt actions"
+    print_color "$GREEN" "  1. $(get_string "ENGLISH_EN" "$interface_lang")"
+    print_color "$GREEN" "  2. $(get_string "JAPANESE_JP" "$interface_lang")"
+    print_color "$GREEN" "  3. $(get_string "CHINESE_ZH" "$interface_lang")"
+    print_color "$GREEN" "  4. $(get_string "GERMAN_DE" "$interface_lang")"
+    print_color "$GREEN" "  5. $(get_string "FRENCH_FR" "$interface_lang")"
+    print_color "$GREEN" "  6. $(get_string "SPANISH_ES" "$interface_lang")"
+    print_color "$GREEN" "  7. $(get_string "ITALIAN_IT" "$interface_lang")"
+    print_color "$GREEN" "  8. $(get_string "PORTUGUESE_PT" "$interface_lang")"
+    print_color "$GREEN" "  9. $(get_string "RUSSIAN_RU" "$interface_lang")"
+    print_color "$GREEN" "  10. $(get_string "ARABIC_AR" "$interface_lang")"
+    print_color "$GREEN" "  11. $(get_string "KOREAN_KO" "$interface_lang")"
+    print_color "$GREEN" "  12. $(get_string "HINDI_HI" "$interface_lang")"
+    print_color "$GREEN" "  13. $(get_string "BACK_TO_PROMPT_ACTIONS" "$interface_lang")"
     echo ""
     
-    echo -n "Select language (1-13): "
+    echo -n "$(get_string "SELECT_LANGUAGE_1_13" "$interface_lang") "
     read -r lang_choice </dev/tty
     
     case $lang_choice in
@@ -591,7 +693,7 @@ copy_language_version() {
         11) copy_language_prompt "$prompt_content" "KO" ;;
         12) copy_language_prompt "$prompt_content" "HI" ;;
         13|*) 
-            print_color "$BLUE" "Returning to prompt actions..."
+            print_color "$BLUE" "$(get_string "RETURNING_TO_PROMPT_ACTIONS" "$interface_lang")"
             show_prompt_action_menu "$prompt_content"
             return
             ;;
@@ -671,8 +773,9 @@ get_prompt_by_position() {
 copy_language_prompt() {
     local prompt_content="$1"
     local language="$2"
+    local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
     
-    print_color "$BLUE" "🌍 Looking for $language version of this prompt..."
+    print_color "$BLUE" "$(get_string "LOOKING_FOR_LANGUAGE_VERSION" "$interface_lang") $language $(get_string "VERSION" "$interface_lang")"
     
     # Get the current prompt title and category from the search results
     local current_prompt_title=""
@@ -694,7 +797,7 @@ copy_language_prompt() {
     fi
     
     if [[ -z "$current_prompt_title" ]] || [[ -z "$current_category" ]]; then
-        print_color "$RED" "❌ Could not determine prompt title or category. Copying English version instead."
+        print_color "$RED" "$(get_string "COULD_NOT_DETERMINE" "$interface_lang")"
         copy_prompt_to_clipboard "$prompt_content"
         return
     fi
@@ -702,8 +805,8 @@ copy_language_prompt() {
     # Check if the language folder exists
     local language_dir="$SCRIPT_DIR/Prompts/$language"
     if [[ ! -d "$language_dir" ]]; then
-        print_color "$YELLOW" "⚠️  Language folder for $language not found at $language_dir"
-        print_color "$CYAN" "Copying English version instead."
+        print_color "$YELLOW" "$(get_string "LANGUAGE_FOLDER_NOT_FOUND" "$interface_lang") $language_dir"
+        print_color "$CYAN" "$(get_string "COPYING_ENGLISH_INSTEAD" "$interface_lang")"
         copy_prompt_to_clipboard "$prompt_content"
         return
     fi
@@ -711,8 +814,8 @@ copy_language_prompt() {
     # Check if the category file exists in the language folder
     local language_category_file="$language_dir/$current_category.md"
     if [[ ! -f "$language_category_file" ]]; then
-        print_color "$YELLOW" "⚠️  Category file for $language not found: $language_category_file"
-        print_color "$CYAN" "Copying English version instead."
+        print_color "$YELLOW" "$(get_string "CATEGORY_FILE_NOT_FOUND" "$interface_lang") $language_category_file"
+        print_color "$CYAN" "$(get_string "COPYING_ENGLISH_INSTEAD" "$interface_lang")"
         copy_prompt_to_clipboard "$prompt_content"
         return
     fi
@@ -722,32 +825,36 @@ copy_language_prompt() {
     local prompt_position=$(find_prompt_position "$english_category_file" "$current_prompt_title")
     
     if [[ $prompt_position -eq 0 ]]; then
-        print_color "$YELLOW" "⚠️  Could not find prompt position for '$current_prompt_title' in English version"
-        print_color "$CYAN" "Copying English version instead."
+        print_color "$YELLOW" "$(get_string "COULD_NOT_FIND_PROMPT_POSITION" "$interface_lang") '$current_prompt_title'"
+        print_color "$CYAN" "$(get_string "COPYING_ENGLISH_INSTEAD" "$interface_lang")"
         copy_prompt_to_clipboard "$prompt_content"
         return
     fi
     
-    print_color "$CYAN" "📍 Found prompt at position $prompt_position in $current_category"
+    print_color "$CYAN" "$(get_string "FOUND_PROMPT_AT_POSITION" "$interface_lang") $prompt_position $(get_string "FOUND_PROMPT_AT_POSITION_SUFFIX" "$interface_lang") $current_category"
     
     # Get the prompt at the same position in the target language
     local translated_prompt=$(get_prompt_by_position "$language_category_file" "$prompt_position")
     
     if [[ -z "$translated_prompt" ]]; then
-        print_color "$YELLOW" "⚠️  Could not find prompt at position $prompt_position in $language version of $current_category"
-        print_color "$CYAN" "Copying English version instead."
+        print_color "$YELLOW" "$(get_string "COULD_NOT_FIND_AT_POSITION" "$interface_lang") $prompt_position $(get_string "NOT_FOUND_IN_LANGUAGE" "$interface_lang") $language"
+        print_color "$CYAN" "$(get_string "COPYING_ENGLISH_INSTEAD" "$interface_lang")"
         copy_prompt_to_clipboard "$prompt_content"
         return
     fi
     
     # Copy the translated prompt to clipboard
-    print_color "$GREEN" "✅ Found $language version of prompt '$current_prompt_title' (position $prompt_position) in $current_category"
+    print_color "$GREEN" "$(get_string "FOUND_LANGUAGE_VERSION" "$interface_lang") $language $(get_string "LANGUAGE_VERSION_OF_PROMPT" "$interface_lang") '$current_prompt_title' $(get_string "POSITION" "$interface_lang") $prompt_position) $(get_string "IN" "$interface_lang") $current_category"
     copy_prompt_to_clipboard "$translated_prompt"
 }
 
 # Function for interactive search
 interactive_search() {
-    print_color "$BLUE" "🔍 Interactive Prompt Search"
+    # Refresh prompts directory in case language changed
+    refresh_prompts_directory
+    
+    local interface_lang=$(read_profile_value "INTERFACE_LANGUAGE" "EN")
+    print_color "$BLUE" "$(get_string "SEARCH_TOOL_TITLE" "$interface_lang")"
     echo ""
     print_color "$CYAN" "Type 'quit' or 'q' to exit, 'help' for tips"
     echo ""
@@ -836,39 +943,39 @@ show_search_options_menu() {
         
         print_color "$BOLD$CYAN" "$(get_string "SEARCH_MENU_TITLE" "$interface_lang")"
         echo ""
-        print_color "$GREEN" "🔍 Simple Search Options:"
+        print_color "$GREEN" "$(get_string "SIMPLE_SEARCH_OPTIONS" "$interface_lang")"
         echo ""
-        print_color "$YELLOW" "  1. Interactive Search (recommended)"
-        print_color "$YELLOW" "  2. Quick Keyword Search"
-        print_color "$YELLOW" "  3. Browse All Categories"
-        print_color "$YELLOW" "  4. Back to Main Menu"
+        print_color "$YELLOW" "  1. $(get_string "INTERACTIVE_SEARCH_RECOMMENDED" "$interface_lang")"
+        print_color "$YELLOW" "  2. $(get_string "QUICK_KEYWORD_SEARCH" "$interface_lang")"
+        print_color "$YELLOW" "  3. $(get_string "BROWSE_ALL_CATEGORIES" "$interface_lang")"
+        print_color "$YELLOW" "  4. $(get_string "BACK_TO_MAIN_MENU" "$interface_lang")"
         echo ""
         print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo ""
         
-        echo -n "Select option (1-4): "
+        echo -n "$(get_string "SELECT_OPTION_1_4" "$interface_lang") "
         read -r search_choice </dev/tty
         
         case $search_choice in
             1)
-                print_color "$BLUE" "🚀 Launching Interactive Search..."
+                print_color "$BLUE" "$(get_string "LAUNCHING_INTERACTIVE_SEARCH" "$interface_lang")"
                 echo ""
                 interactive_search
                 ;;
             2)
                 echo ""
-                echo -n "Enter keywords to search: "
+                echo -n "$(get_string "ENTER_KEYWORDS_TO_SEARCH" "$interface_lang") "
                 read -r keywords </dev/tty
                 if [[ -n "$keywords" ]]; then
                     echo ""
-                    print_color "$BLUE" "🔍 Searching for: $keywords"
+                    print_color "$BLUE" "$(get_string "SEARCHING_FOR" "$interface_lang") $keywords"
                     echo ""
                     perform_search "$keywords"
                 fi
                 ;;
             3)
                 echo ""
-                print_color "$BLUE" "📂 Launching Category Browser..."
+                print_color "$BLUE" "$(get_string "LAUNCHING_CATEGORY_BROWSER" "$interface_lang")"
                 show_category_browser
                 
                 # Check if user wants to return to search menu
@@ -878,7 +985,7 @@ show_search_options_menu() {
                 fi
                 ;;
             4|*)
-                print_color "$BLUE" "Returning to main menu..."
+                print_color "$BLUE" "$(get_string "RETURNING_TO_MAIN_MENU" "$interface_lang")"
                 exit 0
                 ;;
         esac
@@ -890,7 +997,10 @@ perform_search() {
     local keywords="$1"
     local search_terms=("$@")
     
-    # Search in all Prompts/EN files where the actual prompts are
+    # Refresh prompts directory in case language changed
+    refresh_prompts_directory
+    
+    # Search in all prompts files in the current language directory
     clear_search_results
     for file in "$PROMPTS_DIR"/*.md; do
         if [[ -f "$file" ]]; then
@@ -958,6 +1068,9 @@ print_header() {
 
 # Main function
 main() {
+    # Refresh prompts directory to use correct language
+    refresh_prompts_directory
+    
     # Default options
     local INTERACTIVE=false
     local LIST_CATEGORIES=false

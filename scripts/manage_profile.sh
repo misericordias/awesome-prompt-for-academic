@@ -193,11 +193,11 @@ edit_profile_settings() {
         
         print_color "$BOLD$CYAN" "$(get_string "EDIT_SETTINGS_TITLE" "$interface_lang")"
         echo ""
-        print_color "$GREEN" "  1. 🔧 Display Settings"
-        print_color "$GREEN" "  2. 🎨 Interface Settings"
-        print_color "$GREEN" "  3. 🔍 Search Settings"
-        print_color "$GREEN" "  4. 🛠️  Tool Settings"
-        print_color "$GREEN" "  5. 🔄 Reset to Defaults"
+        print_color "$GREEN" "  1. $(get_string "DISPLAY_SETTINGS" "$interface_lang")"
+        print_color "$GREEN" "  2. $(get_string "INTERFACE_SETTINGS" "$interface_lang")"
+        print_color "$GREEN" "  3. $(get_string "SEARCH_SETTINGS" "$interface_lang")"
+        print_color "$GREEN" "  4. $(get_string "TOOL_SETTINGS" "$interface_lang")"
+        print_color "$GREEN" "  5. $(get_string "RESET_TO_DEFAULTS" "$interface_lang")"
         print_color "$GREEN" "  6. $(get_string "BACK_TO_PROFILE_MENU" "$interface_lang")"
         echo ""
         print_color "$MAGENTA" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -247,9 +247,9 @@ edit_display_settings() {
         local auto_save=$(read_profile_value "AUTO_SAVE" "true")
         
         print_color "$GREEN" "$(get_string "CURRENT_SETTINGS" "$interface_lang")"
-        print_color "$CYAN" "  1. Show Welcome: $show_welcome ✅ IMPLEMENTED"
-        print_color "$CYAN" "  2. Show Colors:  $show_colors ✅ IMPLEMENTED"
-        print_color "$CYAN" "  3. Auto Save:    $auto_save ⚠️  TODO: Not implemented in main scripts"
+        print_color "$CYAN" "  1. $(get_string "SHOW_WELCOME" "$interface_lang"): $show_welcome $(get_string "IMPLEMENTED" "$interface_lang")"
+        print_color "$CYAN" "  2. $(get_string "SHOW_COLORS" "$interface_lang"): $show_colors $(get_string "IMPLEMENTED" "$interface_lang")"
+        print_color "$CYAN" "  3. $(get_string "AUTO_SAVE" "$interface_lang"): $auto_save $(get_string "TODO_NOT_IMPLEMENTED" "$interface_lang")"
         print_color "$GREEN" "  4. $(get_string "BACK_TO_EDIT_MENU" "$interface_lang")"
         echo ""
         
@@ -321,10 +321,10 @@ edit_interface_settings() {
         local interface_style=$(read_profile_value "INTERFACE_STYLE" "modern")
         
         print_color "$GREEN" "$(get_string "CURRENT_SETTINGS" "$interface_lang")"
-        print_color "$CYAN" "  1. Interface Language: $(get_language_name "$interface_language") ✅ IMPLEMENTED"
-        print_color "$CYAN" "  2. Default Language: $default_language ⚠️  TODO: Not implemented in main scripts"
-        print_color "$CYAN" "  3. Default Category: $default_category ⚠️  TODO: Not implemented in main scripts"
-        print_color "$CYAN" "  4. Interface Style:  $interface_style ⚠️  TODO: Not implemented in main scripts"
+        print_color "$CYAN" "  1. $(get_string "INTERFACE_LANGUAGE_SETTING" "$interface_lang"): $(get_language_name "$interface_language") $(get_string "IMPLEMENTED" "$interface_lang")"
+        print_color "$CYAN" "  2. $(get_string "DEFAULT_LANGUAGE" "$interface_lang"): $default_language $(get_string "TODO_NOT_IMPLEMENTED" "$interface_lang")"
+        print_color "$CYAN" "  3. $(get_string "DEFAULT_CATEGORY" "$interface_lang"): $default_category $(get_string "TODO_NOT_IMPLEMENTED" "$interface_lang")"
+        print_color "$CYAN" "  4. $(get_string "INTERFACE_STYLE" "$interface_lang"): $interface_style $(get_string "TODO_NOT_IMPLEMENTED" "$interface_lang")"
         print_color "$GREEN" "  5. $(get_string "BACK_TO_EDIT_MENU" "$interface_lang")"
         echo ""
         

@@ -5,7 +5,9 @@
       "Bash(source:*)",
       "Bash(get_string \"EDIT_SETTINGS_TITLE\" \"ZH\")",
       "Bash(get_string \"INTERFACE_LANG_SELECTION\" \"ZH\")",
-      "Bash(get_string \"CURRENT_SETTINGS\" \"ZH\")"
+      "Bash(get_string \"CURRENT_SETTINGS\" \"ZH\")",
+      "Bash(bash scripts/search_prompts.sh:*)",
+      "Bash(./scripts/search_prompts.sh:*)"
     ],
     "deny": []
   }
